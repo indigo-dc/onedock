@@ -1,0 +1,63 @@
+#!/bin/bash
+# 
+# Copyright 2002-2015, OpenNebula Project (OpenNebula.org), C12G Labs        #
+#
+# Modifications to adapt to ONEDock - Docker support for ONE (as VMs)
+# Copyright (C) GRyCAP - I3M - UPV
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+DRIVER_PATH=$(dirname $0)
+source ${DRIVER_PATH}/../../onedock.sh
+log_onedock_debug "$0 $@"
+setup_frontend
+
+# -------- Get datastore arguments from OpenNebula core ------------
+
+DRV_ACTION=$1
+ID=$2
+
+BASE_PATH=$DATASTORE_DATA_PATH
+MONITOR_SCRIPT=$(cat <<EOF
+if [ ! -d $DATASTORE_DATA_PATH ]; then
+    mkdir -p $DATASTORE_DATA_PATH
+fi
+
+
+USED_MB=\$(df -B1M -P $BASE_PATH 2>/dev/null | tail -n 1 | awk '{print \$3}')
+TOTAL_MB=\$(df -B1M -P $BASE_PATH 2>/dev/null | tail -n 1 | awk '{print \$2}')
+FREE_MB=\$(df -B1M -P $BASE_PATH 2>/dev/null | tail -n 1 | awk '{print \$4}')
+
+if [ -z "\$USED_MB" -o -z "\$TOTAL_MB" -o -z "\$FREE_MB" ]; then
+    msg="Empty value found"
+    echo "\$msg: USED_MB=\$USED_MB, TOTAL_MB=\$TOTAL_MB, FREE_MB=\$FREE_MB"
+    exit 1
+fi
+
+echo "USED_MB=\$USED_MB"
+echo "FREE_MB=\$FREE_MB"
+echo "TOTAL_MB=\$TOTAL_MB"
+EOF
+)
+
+MONITOR_DATA=$(monitor_and_log "$MONITOR_SCRIPT" "Monitor script" 2>&1)
+MONITOR_STATUS=$?
+
+if [ "$MONITOR_STATUS" = "0" ]; then
+    echo "$MONITOR_DATA" | tr ' ' '\n'
+    exit 0
+else
+    echo "$MONITOR_DATA"
+    exit $MONITOR_STATUS
+fi

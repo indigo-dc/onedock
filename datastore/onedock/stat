@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# ONEDock - Docker support for ONE (as VMs)
+# Copyright (C) GRyCAP - I3M - UPV 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+DRIVER_PATH=$(dirname $0)
+source ${DRIVER_PATH}/../../onedock.sh
+log_onedock_debug "$0 $@"
+setup_frontend
+
+DRV_ACTION=$1
+ID=$2
+
+log_onedock_debug "we should check the size from the global docker hub directory"
+echo 0
+exit 0
+
+# ----------- The following code will check the size from a docker registry v2
+#
+#source ${DRIVER_PATH}/common-utils
+#split_dock_name "$SRC" SERVER USER IMAGE TAG
+#XPATH="$XPATH_APP -b $DRV_ACTION"
+#
+#unset i XPATH_ELEMENTS
+#
+#while IFS= read -r -d '' element; do
+#    XPATH_ELEMENTS[i++]="$element"
+#done < <($XPATH     /DS_DRIVER_ACTION_DATA/DATASTORE/TYPE \
+#                    /DS_DRIVER_ACTION_DATA/IMAGE/PATH)
+#
+#unset i
+#
+#DS_TYPE="${XPATH_ELEMENTS[i++]}"
+#SRC="${XPATH_ELEMENTS[i++]}"
+#
+#SERVER=${SERVER:-$LOCAL_SERVER}
+#TAG=${TAG:-latest}
+#
+#REPOS=https://$SERVER/v2
+#SIZE=0
+#MANIFEST=$(monitor_and_log "curl -fs -X GET $REPOS/$IMAGE/manifests/$TAG" "Error getting manifest for image $IMAGE")
+#if [ $? -ne 0 ]; then
+#	echo "error getting image size $IMAGE:$TAG" >&2
+#	exit -1
+#fi
+#
+#for blob in $(echo $MANIFEST | jq '.fsLayers[].blobSum' -); do 
+#	BLOBID=$(echo $blob | sed 's/^"\(.*\)"$/\1/'i)
+#	HEAD=$(curl -sI $REPOS/$IMAGE/blobs/$BLOBID)
+#	if [ $? -eq 0 ]; then
+#		SHEAD="${HEAD##*Content-Length: }"
+#		SHEAD="${SHEAD%%[[:space:]]*}"
+#		SIZE=$[ $SIZE + $SHEAD ]
+#	else
+#		echo "error getting blob $blob" >&2
+#	fi
+#done
+#echo $[ $SIZE / 1048576 ]
