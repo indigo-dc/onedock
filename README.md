@@ -11,6 +11,7 @@ This project has been tested under the next environment (for both front-end and 
 * Ubuntu 14.04
 * jq package installed
 * ONE 4.12
+* user oneadmin is able to execute docker (i.e. is in group "docker"; usermod -aG docker oneadmin)
 
 ## Installation
 
@@ -33,7 +34,7 @@ ONEDock will be installed. The you should adjust the variables in ```/var/lib/on
 In order to activate ONEDock in ONE, you just need to update the /etc/one/oned.conf file.
 
 ```bash
-cat >> /etc/one/oned.conf < EOF
+cat >> /etc/one/oned.conf << EOF
 IM_MAD = [
       name       = "onedock",
       executable = "one_im_ssh",
@@ -109,11 +110,11 @@ This is a quick set of instruction with no explanation to install a local docker
 mkdir -p /var/lib/docker-registry/data
 cd /var/lib/docker-registry/
 mkdir -p certs && openssl req -newkey rsa:4096 -nodes -sha256 -keyout certs/domain.key -x509 -days 365 -out certs/domain.crt
-docker run -d -p 5000:5000 --restart=always --name registry -v /var/lib/docker-registry/data:/var/lib/registry -v /var/lib/docker-registry/certs:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key registry:2
 mkdir -p /etc/docker/certs.d/onedock:5000/
 cp /var/lib/docker-registry/certs/domain.crt /etc/docker/certs.d/onedock\:5000/
 cp /var/lib/docker-registry/certs/domain.crt /usr/local/share/ca-certificates/
 update-ca-certificates
+docker run -d -p 5000:5000 --restart=always --name registry -v /var/lib/docker-registry/data:/var/lib/registry -v /var/lib/docker-registry/certs:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key registry:2
 ```
 
 ### Checking the registry
