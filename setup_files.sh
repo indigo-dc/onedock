@@ -20,7 +20,7 @@ read -p "overwrite files if exist? (y/N) " OVERWRITE
 OVERWRITE=$(echo $OVERWRITE | tr '[a-z]' '[A-Z]')
 
 CLOB=
-if [ "$OVERWRITE" == "y" ]; then
+if [ "$OVERWRITE" != "y" ]; then
 CLOB='-n'
 fi
 cp -r $CLOB im/onedock* /var/lib/one/remotes/im/
