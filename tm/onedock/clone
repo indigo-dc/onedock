@@ -38,7 +38,7 @@ DST_HOST=`arg_host $DST`
 
 DISK_ID=$(basename ${DST_PATH} | cut -d. -f2)
 
-read_xpath "$(cat)" "/VM/TEMPLATE/DISK[DISK_ID=$DISK_ID]/IMAGE_ID"
+read_xpath "$(onevm show -x $VMID)" "/VM/TEMPLATE/DISK[DISK_ID=$DISK_ID]/IMAGE_ID"
 
 IMAGE_ID="${XPATH_ELEMENTS[0]}"
 
