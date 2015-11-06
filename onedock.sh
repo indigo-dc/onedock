@@ -44,6 +44,7 @@ function setup_frontend {
 }
 
 function setup_wn {
+    source ${DRIVER_PATH}/../../scripts_common.sh
     export XPATH_APP="${DRIVER_PATH}/../../datastore/xpath.rb"
     export ONEDOCK_LOGFILE=
 }
