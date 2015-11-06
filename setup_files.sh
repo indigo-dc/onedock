@@ -16,20 +16,27 @@
 # limitations under the License.
 #
 
-read -p "overwrite files if exist? (y/N) " OVERWRITE
+read -p "this will overwrite files. proceed? (y/N) " OVERWRITE
 OVERWRITE=$(echo $OVERWRITE | tr '[a-z]' '[A-Z]')
 
-CLOB=
-if [ "$OVERWRITE" != "y" ]; then
-CLOB='-n'
+if [ "$OVERWRITE" != "Y" ]; then
+exit
 fi
-cp -r $CLOB im/onedock* /var/lib/one/remotes/im/
-cp -r $CLOB vmm/onedock /var/lib/one/remotes/vmm/
-cp -r $CLOB tm/onedock/ /var/lib/one/remotes/tm/
-cp -r $CLOB datastore/onedock /var/lib/one/remotes/datastore/
-cp $CLOB onedock.sh /var/lib/one/remotes/
 
-# ** editar /var/lib/one/remotes/onedock.conf
+FOLDERS="im/onedock* vmm/onedock tm/onedock datastore/onedock"
+for F in $FOLDERS; do
+    if [ ! -d "$F" ]; then
+        cp -r "./$F" /var/lib/one/remotes/
+    else
+        cp ./$F/* "/var/lib/one/remotes/$F/"
+    fi
+done
+
+cp onedock.sh /var/lib/one/remotes/
+cp docker-network /var/lib/one/remotes/
+
+[ -d /var/tmp/one ] && rm -rf /var/tmp/one/
+
 if [ ! -e /var/lib/one/remotes/onedock.conf ]; then
 cat > /var/lib/one/remotes/onedock.conf << EOF
 #!/bin/bash
