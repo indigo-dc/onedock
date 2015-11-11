@@ -31,11 +31,9 @@ for F in $FOLDERS; do
         cp ./$F/* "/var/lib/one/remotes/$F/"
     fi
 done
-
+        
 cp onedock.sh /var/lib/one/remotes/
-cp docker-network /var/lib/one/remotes/
-
-[ -d /var/tmp/one ] && rm -rf /var/tmp/one/
+cp docker-manage-network /var/lib/one/remotes/
 
 if [ ! -e /var/lib/one/remotes/onedock.conf ]; then
 cat > /var/lib/one/remotes/onedock.conf << EOF
@@ -60,8 +58,12 @@ export LOCAL_SERVER=$(hostname):5000
 export DATASTORE_DATA_PATH=/var/lib/docker-registry/data/
 export ONEDOCK_LOGFILE=/var/log/onedock.log
 export IMAGE_BASENAME=image4one
+export ONEDOCK_DEBUG=True
+export ONEDOCK_DEFAULT_NETMASK=24
+export ONEDOCK_DEFAULT_DHCP=yes
 EOF
 else
 echo "Configuration file /var/lib/one/remotes/onedock.conf exists. Please check that the variables are properly set."
 fi
 touch /var/log/onedock.log && chown oneadmin:oneadmin /var/log/onedock.log
+chown -R oneadmin:oneadmin /var/lib/one/remotes

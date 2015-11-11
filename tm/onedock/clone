@@ -21,30 +21,51 @@ source ${DRIVER_PATH}/../../onedock.sh
 log_onedock_debug "$0 $@"
 setup_frontend
 
+# clone: clones the image from the datastore (non-persistent images)
+# ARGUMENTS: fe:SOURCE host:remote_system_ds/disk.i vm_id ds_id
+# fe is the front-end hostname
+# SOURCE is the path of the disk image in the form DS_BASE_PATH/disk
+# host is the target host to deploy the VM
+# remote_system_ds is the path for the system datastore in the host
+# vm_id is the id of the VM
+# ds_id is the target datastore (the system datastore)
+
 SRC=$1
 DST=$2
 VMID=$3
 DSID=$4
 
-#-------------------------------------------------------------------------------
-# Set dst path and dir
-#-------------------------------------------------------------------------------
 DST_PATH=`arg_path $DST`
 DST_HOST=`arg_host $DST`
-
-#-------------------------------------------------------------------------------
-# Get Image information
-#-------------------------------------------------------------------------------
-
 DISK_ID=$(basename ${DST_PATH} | cut -d. -f2)
 
-read_xpath "$(onevm show -x $VMID)" "/VM/TEMPLATE/DISK[DISK_ID=$DISK_ID]/IMAGE_ID"
+DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "one-$VMID" "$DISK_ID")
 
-IMAGE_ID="${XPATH_ELEMENTS[0]}"
+PROTOCOL=${SRC::9}
+if [ "$PROTOCOL" == "docker://" ]; then
+    DOCKER_IMG_NAME=${SRC:9}
+    DOCKER_CMD="docker pull ${DOCKER_IMG_NAME}"
+    ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error getting image ${DOCKER_IMG_NAME}"
+    log_onedock "image ${DOCKER_IMG_NAME} downloaded in $DST_HOST"
+else
+    log_onedock_debug "THIS PART OF CODE IS NOT FULLY TESTED"
+    # it is a file and we will assume that it is in a shared folder (e.g. NFS)
+    # the current support for this is to load the image in the local repository 
+    SRC_PATH=`arg_path $SRC`
+    
+    IMAGENAME=$(get_imagename_from_file "$SRC_PATH")
+    [ $? -ne 0 ] && log_error "$IMAGENAME" && exit 1
+    split_dock_name "$IMAGENAME" SERVER USER IMAGE TAG
+    DOCKER_IMG_NAME=$(build_dock_name "" "" "$IMAGE" "$TAG")
 
-DOCKER_IMG_NAME=$(build_dock_name "$LOCAL_SERVER" "" "$IMAGE_BASENAME" "$IMAGE_ID")
+    log_onedock_debug "loading image $IMAGENAME from file"
+    DOCKER_CMD="docker load -i $SRC_PATH"
+    ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error getting image ${DOCKER_IMG_NAME}"
+fi
 
-DOCKER_CMD="docker pull ${DOCKER_IMG_NAME}"
-ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error getting image ${DOCKER_IMG_NAME}"
-log_onedock "image ${DOCKER_IMG_NAME} downloaded in $DST_HOST"
+DOCKER_CMD="docker tag -f $DOCKER_IMG_NAME $DISKIMAGENAME"
+ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error tagging the image $DOCKER_IMG_NAME as $DISKIMAGENAME"
+log_onedock_debug "image $DOCKER_IMG_NAME tagged as $DISKIMAGENAME"
+DOCKER_CMD="docker rmi $DOCKER_IMG_NAME"
+ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error removing image $DOCKER_IMG_NAME"
 exit 0

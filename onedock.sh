@@ -18,7 +18,16 @@
 
 # -------- Set up the environment to source common tools & conf ------------
 
-source ${DRIVER_PATH}/../../onedock.conf
+
+[ -e ${DRIVER_PATH}/../../onedock.conf ] && source ${DRIVER_PATH}/../../onedock.conf
+
+function is_true {
+    local V=$(echo $1 | tr '[a-z]' '[A-Z]')
+    [ "$V" == "TRUE" ] && return 0
+    [ "$V" == "YES" ] && return 0
+    [ "$V" == "1" ] && return 0
+    return 1
+}
 
 function setup_frontend {
     if [ -z "${ONE_LOCATION}" ]; then
@@ -29,9 +38,9 @@ function setup_frontend {
     
     . $LIB_LOCATION/sh/scripts_common.sh
     
-    source ${DRIVER_PATH}/../libfs.sh
+    source ${DRIVER_PATH}/../../datastore/libfs.sh
     export LIB_LOCATION
-    export XPATH_APP="${DRIVER_PATH}/../xpath.rb"
+    export XPATH_APP="${DRIVER_PATH}/../../datastore/xpath.rb"
 
     if [ -z "${ONE_LOCATION}" ]; then
         TMCOMMON=/var/lib/one/remotes/tm/tm_common.sh
@@ -74,10 +83,12 @@ function log_onedock {
 }
 
 function log_onedock_debug {
-	if [ "$ONEDOCK_LOGFILE" != "" ]; then
-		echo "$(date -R) - $@" >> "$ONEDOCK_LOGFILE"
-	else
-		echo "$(date -R) - $@"
+	if [ "$ONEDOCK_DEBUG" == "True" ]; then
+		if [ "$ONEDOCK_LOGFILE" != "" ]; then
+			echo "$(date -R) - $@" >> "$ONEDOCK_LOGFILE"
+		else
+			echo "$(date -R) - $@"
+		fi
 	fi
 }
 
@@ -134,13 +145,25 @@ function _split_dock_name {
 }
 
 function split_dock_name {
-	_S2=${2:-_S2}
-	_S3=${3:-_S3}
-	_S4=${4:-_S4}
-	_S5=${5:-_S5}
-	IFS=/ read $_S2 $_S3 $_S4 $_S5 <<< $(IFS= _split_dock_name $1)
-	[ "$2" != "" ] && export $2
-	[ "$3" != "" ] && export $3
-	[ "$4" != "" ] && export $4
-	[ "$5" != "" ] && export $5
+    _S2=${2:-_S2}
+    _S3=${3:-_S3}
+    _S4=${4:-_S4}
+    _S5=${5:-_S5}
+    IFS=/ read $_S2 $_S3 $_S4 $_S5 <<< $(IFS= _split_dock_name $1)
+    [ "$2" != "" ] && export $2
+    [ "$3" != "" ] && export $3
+    [ "$4" != "" ] && export $4
+    [ "$5" != "" ] && export $5
+}
+
+function get_imagename_from_file {
+    FILE=$1
+    CONTENT=$(tar --extract --file "$FILE" repositories -O)
+    [ $? -ne 0 ] && echo "file $FILE is not a docker image (does not have the proper format)" && return 1
+    IMAGE_COUNT=$(echo "$CONTENT" | jq '.[] | keys | length')
+    [ "$IMAGE_COUNT" != "1" ] && echo "file $FILEcontains more than one image or other error has happened: $IMAGE_COUNT" && return 1
+    IMAGE=$(echo "$CONTENT" |  jq 'keys | .[0]'  | sed 's/^"\(.*\)"$/\1/')
+    TAG=$(echo "$CONTENT" | jq ".$IMAGE | keys | .[0]" | sed 's/^"\(.*\)"$/\1/')	
+    echo "$IMAGE:$TAG"
+    return 0
 }

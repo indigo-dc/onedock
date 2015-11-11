@@ -21,11 +21,33 @@ source ${DRIVER_PATH}/../../onedock.sh
 log_onedock_debug "$0 $@"
 setup_frontend
 
-DRV_ACTION=$1
-ID=$2
+# stat: returns the size of an image in Mb
+# ARGUMENTS: datastore_image_dump image_id
+# RETURNS: size
+# datastore_image_dump is an XML dump of the driver action encoded in Base 64. See a decoded example.
+# size the size of the image in Mb.
 
-log_onedock_debug "we should check the size from the global docker hub directory"
-echo 0
+DRIVER_ACTION=$1
+
+read_xpath $(echo "$DRIVER_ACTION" | base64 -d) "/DS_DRIVER_ACTION_DATA/IMAGE/PATH"
+SRC="${XPATH_ELEMENTS[0]}"
+
+SIZE=0
+if [[ "$SRC" =~ ^docker://.*$ ]]; then
+	log_onedock_debug "we should check the size from the global docker hub directory"
+	SIZE=0
+else
+	[ ! -f "$SRC" ] && log_error "cannot access to the source file $SRC" && echo "0" && exit 1
+	SIZE=$(tar xfO "$SRC" | wc -c)
+	[ $? -ne 0 ] && log_error "could not get the size of file $SRC" && echo "0" && exit 1
+	SIZE=$[ $SIZE / 1048576 ]
+fi
+
+echo $SIZE
+exit 0
+
+
+
 exit 0
 
 # ----------- The following code will check the size from a docker registry v2

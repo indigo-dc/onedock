@@ -58,8 +58,13 @@ function dump_container_info {
 }
 
 # CONTAINERS=$(docker ps -aq)
-CONTAINERS=$(docker ps -q)
+if [ "$1" == "" ]; then
+	CONTAINERS=$(docker ps -q)
+else
+	CONTAINERS=$1
+fi
 CONTAINERS_JSON=$(docker inspect $CONTAINERS)
+[ $? -ne 0 ] && echo "could not poll $CONTAINERS" && exit 1
 for CID in $CONTAINERS; do
 	dump_container_info $CID
 done

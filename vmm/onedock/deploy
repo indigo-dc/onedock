@@ -25,6 +25,7 @@ domain=$1
 mkdir -p `dirname $domain`
 cat > $domain
 
+ONEDOCK_DEPLOYMENT_FILE=$(dirname $domain)/deployment.onedock
 read_xpath "$(cat $domain)" "/VM/ID" "/VM/NAME" "/VM/TEMPLATE/DISK/IMAGE_ID"
 
 unset i
@@ -32,13 +33,81 @@ unset i
 VMID="${XPATH_ELEMENTS[i++]}"
 NAME="${XPATH_ELEMENTS[i++]}"
 IMAGEID="${XPATH_ELEMENTS[i++]}"
+DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
 
-data=`docker run -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID /bin/bash`
-
-if [ $? -eq 0 ]; then
-    echo $domain
+CREATEDEPFILE=yes
+EXISTS=$(docker inspect -f '{{.State.Running}}' "$NAME")
+if [ "$EXISTS" == "false" ]; then
+    CREATEDEPFILE=no
+    data=`docker start "$NAME"`
+elif [ "$EXISTS" == "true" ]; then
+    CREATEDEPFILE=no
+    data="already running"
 else
-    error_message "Could not create domain from $domain"
-    exit -1
+    cat > $ONEDOCK_DEPLOYMENT_FILE << EOF
+EOF
+    data=`docker run --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID /bin/bash 2>&1`
 fi
 
+if [ $? -eq 0 ]; then
+    echo $NAME
+    log_onedock_debug "$data"
+    
+    if [ "$CREATEDEPFILE" == "yes" ]; then
+        DOM=$(cat "$domain")
+        NICS="$(echo "$DOM" | xmlstarlet sel -t -m /VM/TEMPLATE/NIC -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC)" -n)"
+        for NIC in $NICS; do
+            NIC_ID=
+            BRIDGE=
+            IP=
+            MAC=
+            IFS=';' read NIC_ID BRIDGE IP MAC <<< "$NIC"
+    
+            MAC_STR=
+            IP_STR=
+            BRIDGE_STR=
+            GW_STR=
+    
+            NICNAME=eth${NIC_ID}
+            NIC_STR="--create-device $NICNAME"
+            [ "$BRIDGE" != "" ] && BRIDGE_STR="--bridge $BRIDGE"
+            [ "$MAC" != "" ] && MAC_STR="--mac $MAC"
+            if [ "$IP" != "" ]; then
+                [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && IP=$IP/$ONEDOCK_DEFAULT_NETMASK
+                IP_STR="--ip $IP"
+            fi
+            
+            # Now we get the context for the network
+            NICNAME=ETH${NIC_ID}
+            NET_CONTEXT="$(echo "$DOM" | xmlstarlet sel -t -m /VM/TEMPLATE/CONTEXT -v "concat(${NICNAME}_IP,';',${NICNAME}_MAC,';',${NICNAME}_MASK,';',${NICNAME}_NETWORK,';',${NICNAME}_GATEWAY,';',${NICNAME}_DNS)")"
+            IFS=';' read C_IP C_MAC C_MASK C_NET C_GW C_DNS <<< "$NET_CONTEXT"
+    
+            if [ "$C_IP" != "" ]; then
+                IP_STR="--ip $C_IP"
+                [ "$C_MASK" != "" ] && IP_STR="${IP_STR}/${C_MASK}"
+            else
+                # If there is no context for IP address, should we set the IP using DHCP?
+                is_true "$ONEDOCK_DEFAULT_DHCP" && IP_STR="--dhcp"
+            fi
+            
+            [ "$C_MAC" != "" ] && MAC_STR="--mac $C_MAC"
+            [ "$C_GW" != "" ] && GW_STR="--gateway $C_GW"
+            
+            echo "$SUDO $DN --container-name $NAME $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $ONEDOCK_DEPLOYMENT_FILE
+        done
+    fi
+    
+    NETCONTEXT="$(
+        set -e
+        $(cat $ONEDOCK_DEPLOYMENT_FILE)
+    )"
+    if [ $? -ne 0 ]; then
+        docker rm $(docker stop "$NAME")
+        error_message "network contextualization failed: $(echo $NETCONTEXT | tr -d '\n')"
+        exit 1
+    fi
+    exit 0
+else
+    error_message "Could not create domain from $domain: $data"
+    exit -1
+fi

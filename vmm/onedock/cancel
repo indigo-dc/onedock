@@ -21,12 +21,13 @@ source ${DRIVER_PATH}/../../onedock.sh
 log_onedock_debug "$0 $@"
 setup_wn
 
-DEPLOY_FILE=$1
-DEPLOY_HOST=$2
-VMID=$3
+NAME=$1
 
-read_xpath "$(cat $DEPLOY_FILE)" "/VM/NAME"
-NAME="${XPATH_ELEMENTS[0]}"
+log_onedock_debug $(docker stop "$NAME" && docker rm "$NAME")
+ERR=$?
 
-docker stop "$NAME" && docker rm "$NAME"
-exit $?
+# This is just to clean possible snapshots (maybe there are none)
+IMAGENAME="${NAME}:0"
+docker rmi "$IMAGENAME" > /dev/null 2> /dev/null
+
+exit $ERR

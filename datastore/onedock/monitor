@@ -20,7 +20,7 @@
 
 DRIVER_PATH=$(dirname $0)
 source ${DRIVER_PATH}/../../onedock.sh
-log_onedock_debug "$0 $@"
+# log_onedock_debug "$0 $@"
 setup_frontend
 
 # -------- Get datastore arguments from OpenNebula core ------------
@@ -33,7 +33,6 @@ MONITOR_SCRIPT=$(cat <<EOF
 if [ ! -d $DATASTORE_DATA_PATH ]; then
     mkdir -p $DATASTORE_DATA_PATH
 fi
-
 
 USED_MB=\$(df -B1M -P $BASE_PATH 2>/dev/null | tail -n 1 | awk '{print \$3}')
 TOTAL_MB=\$(df -B1M -P $BASE_PATH 2>/dev/null | tail -n 1 | awk '{print \$2}')

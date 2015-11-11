@@ -19,22 +19,7 @@
 DRIVER_PATH=$(dirname $0)
 source ${DRIVER_PATH}/../../onedock.sh
 log_onedock_debug "$0 $@"
-setup_wn
+setup_frontend
 
-SRC=$1
-DST=$2
-VMID=$3
-DSID=$4
-
-DST_PATH=`arg_path $DST`
-DST_HOST=`arg_host $DST`
-
-DISK_ID=$(basename ${DST_PATH} | cut -d. -f2)
-read_xpath "$(cat)" "/VM/TEMPLATE/DISK[DISK_ID=$DISK_ID]/IMAGE_ID"
-
-IMAGE_ID="${XPATH_ELEMENTS[0]}"
-
-DOCKER_IMG_NAME=$(build_dock_name "$LOCAL_SERVER" "" "$IMAGE_BASENAME" "$IMAGE_ID")
-
-log_onedock "not moving image ${DOCKER_IMG_NAME}"
+log_onedock_debug "moving files is not implemented, yet (assuming shared folders)"
 exit 0

@@ -1,0 +1,428 @@
+#!/bin/bash
+#
+# ONEDock - Docker support for ONE (as VMs)
+#
+# Copyright (C) GRyCAP - I3M - UPV 
+# Developed by Carlos A. caralla@upv.es
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+LOGFILE=/dev/stderr
+
+# Enabling the exit of the script
+set -u
+trap "exit 1" TERM
+export SCRIPTPID=$$
+
+# Logging functions
+function log {
+    if [ "$LOGFILE" == "/dev/stderr" ]; then
+        echo -e "$(date -R) $2 - $3" >&2 
+    else
+        echo -e "$(date -R) $2 - $3" >> "$1"
+    fi
+}
+
+function log_error {
+    log $LOGFILE "[ERROR]" "$1"
+}
+
+function log_debug {
+    log $LOGFILE "[DEBUG]" "$1"
+}
+
+function log_info {
+    log $LOGFILE "[INFO]" "$1"
+}
+
+function finalize {
+    # 
+    # @Syntax: finalize $1
+    #
+    # This function logs the error message in $1 and terminates the script
+    #
+    log_error "$1"
+    kill -s TERM $SCRIPTPID
+    exit
+}
+
+function is_true {
+    V=$(echo $1 | tr '[a-z]' '[A-Z]')
+    [ "$V" == "TRUE" ] && return 0
+    [ "$V" == "1" ] && return 0
+    [ "$V" == "YES" ] && return 0
+    return 1
+}
+
+function setup_bridge {
+    # 
+    # @Syntax: setup_bridge $1
+    #
+    # This function creates a bridge with the name in parameter $1, using brctl, and sets it up using ip command
+    #
+    BRNAME=$1
+    CHECKSTR=$(brctl show | grep "$BRNAME")
+    if [ "$CHECKSTR" == "" ]; then
+        brctl addbr "$BRNAME"
+        
+        if [ $? -ne 0 ]; then
+            finalize "could not create bridge $BRNAME"
+        else
+            log_info "bridge $BRNAME successfully created"
+        fi
+    else
+        log_debug "using the already existing bridge $BRNAME"
+    fi
+    ip link set "$BRNAME" up
+}
+
+function check_bridge {
+    # 
+    # @Syntax: check_bridge $1
+    #
+    # Checks whether bridge $1 exists or not
+    #
+    BRNAME=$1
+    CHECKSTR=$(brctl show | grep "$BRNAME")
+    if [ "$CHECKSTR" == "" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+function build_ns {
+    # 
+    # @Syntax: build_ns $1
+    #
+    # Finds the network namespace for container with id (or name) in $1. It sets up the links to enable to manage the namespace using ip netns commands
+    #
+    
+    local DOCKID=$1
+    local NSDOCK=
+    PID=$(docker inspect -f '{{.State.Pid}}' $DOCKID)
+    
+    if [ $? -ne 0 ]; then
+        finalize "could not find container $DOCKID"
+    fi
+    
+    NSDOCK=ns-$PID
+    mkdir -p /var/run/netns
+    rm -f /var/run/netns/$NSDOCK 2> /dev/null
+    ln -s /proc/$PID/ns/net /var/run/netns/$NSDOCK
+    
+    echo $NSDOCK
+}
+
+function cleanup_ns {
+    # 
+    # @Syntax: cleanup_ns
+    #
+    # Removes the links that correspond to the container with id (or name) in $1
+    #
+    local NSDOCK=$(build_ns $1)
+    rm -f /var/run/netns/$NSDOCK 2> /dev/null
+}
+
+function create_device {
+    # 
+    # @Syntax: setup_net $1 $2 $3
+    #
+    # This function creates a network device named $3 for container with id (or name) $1, and connects it to the bridge $2, thus enabling direct communication between the host and the containers attached to the bridge.
+    #
+
+    DOCKID=$1
+    BRNAME=$2
+    DEVNAME=$3
+    
+    NSDOCK=$(build_ns $DOCKID)
+    
+    set -e
+    VETH0=v${DEVNAME}${NSDOCK}-0
+    VETH1=v${DEVNAME}${NSDOCK}-1
+    ip link add $VETH0 type veth peer name $VETH1
+    ip link set $VETH1 netns $NSDOCK
+    brctl addif $BRNAME $VETH0
+    ip link set dev $VETH0 up
+    ip netns exec $NSDOCK ip link set dev $VETH1 name $DEVNAME
+    ip netns exec $NSDOCK ip link set dev $DEVNAME up
+    set +e
+    log_debug "device $DEVNAME created in container $DOCKID and attached to bridge $BRNAME"
+}
+
+function delete_device {
+    # 
+    # @Syntax: delete_device $1 $2
+    #
+    # This function deletes device $2 from container $1
+    #
+    DOCKID=$1
+    DEVNAME=$2
+    
+    NSDOCK=$(build_ns $DOCKID)
+    set -e
+    ip netns exec $NSDOCK ip link delete dev $DEVNAME
+    set +e
+    log_debug "device $DEVNAME deleted from container $DOCKID"
+}
+
+function assign_ip {
+    # 
+    # @Syntax: assign_ip $1 $2 $3
+    #
+    # This function assigns the ip in $3 to the device $2 in the container $1
+    #
+
+    DOCKID=$1
+    DEVNAME=$2
+    IPADDR=$3
+    
+    NSDOCK=$(build_ns $DOCKID)
+    set -e
+    ip netns exec $NSDOCK ip addr add dev $DEVNAME $IPADDR
+    set +e
+    log_debug "ip $IPADDR assigned to device $DEVNAME in container $DOCKID"
+}
+
+function assign_mac {
+    # 
+    # @Syntax: assign_mac $1 $2 $3
+    #
+    # This function assigns the mac address in $3 to the device $2 in the container $1
+    #
+
+    DOCKID=$1
+    DEVNAME=$2
+    MACADDR=$3
+    
+    NSDOCK=$(build_ns $DOCKID)
+    set -e
+    ip netns exec $NSDOCK ip link set dev $DEVNAME address $MACADDR
+    set +e
+    log_debug "MAC $MACADDR assigned to device $DEVNAME in container $DOCKID"
+}
+
+function assign_gw {
+    # 
+    # @Syntax: assign_router $1 $2 $3
+    #
+    # This function assigns the default router $3 device $2 in the container $1
+    #
+
+    DOCKID=$1
+    DEVNAME=$2
+    GW=$3
+    
+    NSDOCK=$(build_ns $DOCKID)
+    set -e
+    ip netns exec $NSDOCK ip route add dev $DEVNAME default via $GW
+    set +e
+    log_debug "gateway $GW set as default for $DEVNAME in container $DOCKID"
+}
+
+function get_ip_dhcp {
+    # 
+    # @Syntax: get_ip_dhcp $1 $2 [ $3 (default=dhclient) ]
+    #
+    # This function launches a dhcp client stated in $3 (optional parameter which defaults to dhclient) for device $2 in container $1
+    #   * NOTE: the current parameters for the dhcp client are only tested for dhclient.
+    #
+
+    DOCKID=$1
+    DEVNAME=$2
+    set +u
+    DHCP=$3
+    [ "$DHCP" == "" ] && DHCP=dhclient
+    set -u
+
+    NSDOCK=$(build_ns $DOCKID)
+    set -e
+    ip netns exec $NSDOCK dhclient $DEVNAME -nw
+    set +e
+    log_debug "dhcp client launched for device $DEVNAME in container $DOCKID"
+}
+
+function read_param() {
+    # 
+    # @Syntax: read_param $1 $@
+    #
+    # This function checks whether there are enough parameters in the function to get one of them and sets it to the variable name stated in $1
+    #
+    varname=$1
+    if [ $# -gt 2 ]; then
+            eval "$varname"=$3
+            return 0
+    else
+            echo "$2 needs an extra parameter"
+            return 1
+    fi
+}
+
+function exit_on_error() {
+    # 
+    # @Syntax: exit_on_error
+    #
+    # This function checks the result of the execution of the last call and exits in case that it is distinct to 0
+    #
+    if [ $? -ne 0 ]; then
+        finalize "$@"
+    fi
+}
+
+function get_last_device {
+    DOCKID=$1
+    
+    NSDOCK=$(build_ns $DOCKID)
+    LASTID=$(ip netns exec $NSDOCK ip -o link | grep -G 'eth[0-9]*:' | awk -F ':' '{print $2}' | tr -d ' ' | sed 's/eth//g' | sort -n | tail -n 1)
+    if [ $? -ne 0 ] || [ "$(echo $LASTID | tr -d '[0-9]')" != "" ]; then
+        finalize "could not get the last valid device for container $CONTAINERNAME"
+    fi
+    echo $LASTID
+}
+
+function filter_interfaces {
+    DOCKID=$1
+    MAC=$2
+    IP=$3
+    
+    NSDOCK=$(build_ns $DOCKID)
+    MACLIST=$(ip netns exec $NSDOCK ip -o link)
+    IPLIST=$(ip netns exec $NSDOCK ip -o addr)
+    
+    [ "$IP" != "" ] && IPLIST=$(echo "$IPLIST" | grep "$IP")
+    [ "$MAC" != "" ] && MACLIST=$(echo "$MACLIST" | grep "$MAC")
+    
+    IP_IFACES=$(echo "$IPLIST" | awk -F ' ' '{print $2}' | tr -d ' ')
+    MAC_IFACES=$(echo "$MACLIST" | awk -F ':' '{print $2}' | tr -d ' ')
+
+    COMMON=
+    for C_IP in $IP_IFACES; do
+        if [ "$(echo $MAC_IFACES | grep $C_IP)" != "" ]; then
+           COMMON="$COMMON$C_IP "
+        fi
+    done
+
+    for C_IFACE in $COMMON; do
+        C_MAC=$(echo "$MACLIST" | grep $C_IFACE | sed 's/^.*\(\([0-9a-f]\{2\}:\)\{5\}[0-9a-f][0-9a-f]\) .*$/\1/')
+        C_IP=$(echo "$IPLIST" | grep $C_IFACE | sed 's/.*\(inet[6]\{0,1\} [^ ]*\).*/\1/' | awk '{print $2}' | head -n 1)
+        echo "$C_IFACE $C_MAC $C_IP"
+    done
+}
+
+# BRIDGENAME=br1
+BRIDGENAME=
+CONTAINERNAME=
+DEVICENAME=eth0
+IPADDR=
+MACADDR=
+DHCP=no
+CLEAN_NAMESPACES=no
+GW=
+
+CREATE=False
+UPDATE=False
+DELETE=False
+APPEND=False
+INFO=False
+OP=0
+
+function usage {
+    echo "$0 [--container-name <container name>] [--create-device <device> ] [--bridge <bridge>] [--update-device <device>] [--delete-device <device>] [--mac <mac address>] [--ip <ip address>] [--dhcp] [--gateway <gateway>]"
+    finalize ""
+}
+
+while [ $# -gt 0 ]; do
+    case $1 in
+    --container-name|-n)    read_param CONTAINERNAME $@
+                            exit_on_error "missing parameter for --container-name"
+                            shift;;
+    --append-device|-a)     APPEND=True
+                            OP=$[ $OP + 1 ];;
+    --get-info|-g)          INFO=True
+                            OP=$[ $OP + 1 ];;
+    --create-device|-c)	    read_param DEVICENAME $@
+                            exit_on_error "missing parameter for --create-device"
+                            CREATE=True
+                            OP=$[ $OP + 1 ]
+                            shift;;
+    --update-device|-u)	    read_param DEVICENAME $@
+                            exit_on_error "missing parameter for --update-device"
+                            UPDATE=True
+                            OP=$[ $OP + 1 ]
+                            shift;;
+    --delete-device|-d)	    read_param DEVICENAME $@
+                            exit_on_error "missing parameter for --delete-device"
+                            DELETE=True
+                            OP=$[ $OP + 1 ]
+                            shift;;
+    --bridge|-b)            read_param BRIDGENAME $@
+                            exit_on_error "missing parameter for --bridge"
+                            shift;;
+    --mac|-m)               read_param MACADDR $@
+                            exit_on_error "missing parameter for --mac"
+                            shift;;
+    --ip|-i)                read_param IPADDR $@
+                            exit_on_error "missing paramter for --ip"
+                            shift;;
+    --dhcp)                 DHCP=yes;;
+    --gateway|-g)           read_param GW $@
+                            exit_on_error "missing parameter for --gateway"
+                            shift;;
+    --help|-h)              usage;;
+    --cleanup-namespaces)   CLEAN_NAMESPACES=yes
+                            shift;;
+    *)                      finalize "unexpected parameter $1";;
+    esac
+    shift
+done
+
+if [ "$CONTAINERNAME" == "" ]; then
+    finalize "please state the container with wich you want to operate using --container-name (-n) flag"
+fi
+
+if [ "$IPADDR" != "" ] && [ "$DHCP" == "yes" ]; then
+    finalize "trying to get ip using dhcp while ip address stated"
+fi
+
+[ $OP -ne 1 ] && finalize "please state an operation to perform"
+[ $OP -gt 1 ] && finalize "please state ONLY ONE operation to perform"
+
+if is_true $APPEND; then
+    ID=$(get_last_device $CONTAINERNAME)
+    ID=$[ $ID + 1 ]
+    CREATE=True
+    DEVICENAME=eth$ID
+fi
+
+ID=$CONTAINERNAME
+if is_true $CREATE; then
+    [ "$BRIDGENAME" == "" ] && finalize "you have to state the bridge to which attach the device with parameter --bridge"
+    ! check_bridge "$BRIDGENAME" && finalize "bridge $BRIDGENAME does not exist"
+    create_device $ID $BRIDGENAME $DEVICENAME
+fi
+
+if is_true $CREATE || is_true $UPDATE; then
+    [ "$MACADDR" != "" ] && assign_mac $ID "$DEVICENAME" "$MACADDR"
+    [ "$DHCP" == "yes" ] && get_ip_dhcp $ID "$DEVICENAME"
+    [ "$IPADDR" != "" ] && assign_ip $ID "$DEVICENAME" "$IPADDR"
+    [ "$GW" != "" ] && assign_gw $ID "$DEVICENAME" "$GW"
+fi
+
+if is_true $INFO; then
+    filter_interfaces $ID "$MACADDR" "$IPADDR"
+fi
+
+is_true $DELETE && delete_device $ID "$DEVICENAME"
+is_true $CLEAN_NAMESPACES && cleanup_ns $ID
+exit 0

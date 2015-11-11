@@ -21,37 +21,43 @@ source ${DRIVER_PATH}/../../onedock.sh
 log_onedock_debug "$0 $@"
 setup_frontend
 
-# -------- Get cp and datastore arguments from OpenNebula core ------------
+# cp: copies/dumps the image to the datastore
+# ARGUMENTS: datastore_image_dump image_id
+# RETURNS: image_source size
+# * datastore_image_dump is an XML dump of the driver action encoded in Base 64. See a decoded example.
+# * image_source is the image source which will be later sent to the transfer manager
 
 DRV_ACTION=$1
 ID=$2
 
-XPATH="$XPATH_APP -b $DRV_ACTION"
-
-unset i XPATH_ELEMENTS
-
-while IFS= read -r -d '' element; do
-    XPATH_ELEMENTS[i++]="$element"
-done < <($XPATH     /DS_DRIVER_ACTION_DATA/DATASTORE/TYPE \
-                    /DS_DRIVER_ACTION_DATA/IMAGE/PATH)
-
-unset i
+read_xpath "$(echo "$DRV_ACTION" | base64 -d)" "/DS_DRIVER_ACTION_DATA/DATASTORE/TYPE" "/DS_DRIVER_ACTION_DATA/IMAGE/PATH"    
 
 DS_TYPE="${XPATH_ELEMENTS[i++]}"
 SRC="${XPATH_ELEMENTS[i++]}"
 
-# -------- Carry out the work ------------
+PROTOCOL=${SRC::9}
+if [ "$PROTOCOL" == "docker://" ]; then
+    SRC=${SRC:9}
+    split_dock_name "$SRC" SERVER USER IMAGE TAG
 
-split_dock_name "$SRC" SERVER USER IMAGE TAG
+    DOCKNAME=$(build_dock_name "$SERVER" "$USER" "$IMAGE" "$TAG")
+    onedock_exec_and_log "docker pull $DOCKNAME" "Error pulling $DOCKNAME"
+else
+    IMAGENAME=$(get_imagename_from_file "$SRC")
+    [ $? -ne 0 ] && log_error "$IMAGENAME" && exit 1
+    split_dock_name "$IMAGENAME" SERVER USER IMAGE TAG
+    DOCKNAME=$(build_dock_name "" "" "$IMAGE" "$TAG")
 
-DOCKNAME=$(build_dock_name "$SERVER" "$USER" "$IMAGE" "$TAG")
-onedock_exec_and_log "docker pull $DOCKNAME" "Error pulling $DOCKNAME"
+    log_onedock_debug "loading image $IMAGENAME from file"
+    onedock_exec_and_log "docker load -i $SRC" "could not load image from file $SRC"
+fi
 
 LOCALDOCKNAME=$(build_dock_name "$LOCAL_SERVER" "" "$IMAGE_BASENAME" "$ID")
 onedock_exec_and_log "docker tag -f $DOCKNAME $LOCALDOCKNAME" "Error creating tag $LOCALDOCKNAME for image $DOCKNAME in local repository"
 onedock_exec_and_log "docker push $LOCALDOCKNAME" "Error pushing tag $LOCALDOCKNAME" # 1>&2> /dev/null
 onedock_exec_and_log "docker rmi $DOCKNAME" # 1>&2> /dev/null
 onedock_exec_and_log "docker rmi $LOCALDOCKNAME" # 1>&2> /dev/null
+echo "docker://$LOCALDOCKNAME 0"
+
 log_onedock "image \"$DOCKNAME\" successfully pushed into \"$LOCALDOCKNAME\""
-log_onedock "-----------------------------"
 exit 0

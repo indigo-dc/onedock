@@ -1,0 +1,9 @@
+#!/bin/bash
+sudo apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+cat << EOT > /etc/apt/sources.list.d/docker.list
+# Ubuntu Trusty
+deb https://apt.dockerproject.org/repo ubuntu-trusty main
+EOT
+apt-get -y --force-yes install apt-transport-https
+apt-get -y update
+apt-get -y install docker-engine
