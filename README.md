@@ -35,7 +35,7 @@ Moreover Docker is also under a very active development and so the integration w
 
 ## 1. Assumptions
 
-You have a linux installation with [OpenNebula](http://www.opennebula.org) on it. It is assumed that you have a local docker registry v2.0 installed in a host (named dockerregistry), which is the same ONE frontend. Moreover the folder in which the docker images are stored is known and it is accesible from the commandline. If you do not have such deployment please follow the instruction of section _Quick deployment of a test environment_.
+You have a linux installation with [OpenNebula](http://www.opennebula.org) on it. It is assumed that you have a local docker registry v2.0 installed in a host (named dockerregistry), which is the same ONE frontend. Moreover the folder in which the docker images are stored is known and it is accesible from the commandline. If you do not have such deployment please follow the instruction of section [_Quick deployment of a test environment_](#5-quick-deployment-of-a-testing-environment).
 
 ## 2. Environment
 
@@ -88,7 +88,7 @@ EOF
 
 Then you must add onedock to be available as transfer manager and datastore. Please locate the proper lines in /etc/one/oned.conf file and append the ```onedock``` keyword. In the default installation, the result will be similar to the next one:
 
-```
+```bash
 TM_MAD = [
     executable = "one_tm",
     arguments = "-t 15 -d dummy,lvm,shared,fs_lvm,qcow2,ssh,vmfs,ceph,dev,onedock"
@@ -119,7 +119,7 @@ oneadmin ALL=(ALL) NOPASSWD: ONE_MISC, ONE_NET, ONE_LVM, ONE_ISCSI, ONE_OVS, ONE
 
 To create the datastore you just have to create a new datastore using the onedock type for both datastores and transfer manager. An example (as oneadmin):
 
-```
+```bash
 $ cat > onedock.ds << EOF
 NAME=onedock
 DS_MAD=onedock
@@ -132,7 +132,7 @@ $ onedatastore create onedock.ds
 
 Then you have to create a image in the new datastore. An example (as oneadmin):
 
-```
+```bash
 $ cat > ubuntu-docker.tmpl << EOF
 NAME="ubuntu"
 PATH=docker://ubuntu:latest
@@ -147,7 +147,7 @@ The PATH can be set to a real image in docker hub (prepending _docker://_ and us
 ### 4.3 Creating a virtual network
 
 You have to create a virtual network to be used for the containers. An example (as oneadmin):
-```
+```bash
 cat > docker-private.net << EOF
 NAME=private
 BRIDGE=docker0
@@ -207,12 +207,15 @@ Then install as needed
 
 ### 5.2 Scenario #2: Using it into a lxc container
 
-If you want a single-node stand-alone installation of ONEDock, you can get a running _lxc_ container in an ubuntu 14.04 distro by simply executing the next commands:
+If you want a single-node stand-alone installation of ONEDock, you can get a running _lxc_ container in an ubuntu 14.04 distro by simply executing the next commands (this installation assumes that you have installed lxc):
 
 ```bash
 $ git clone https://github.com/indigo-dc/onedock
 $ cd onedock/install
 $ ./create-lxc ashlan --create
+$ lxc-attach -n ashlan
 ```
+
+Now you can go to section [using ONEDock](#4-using-onedock), and start using ONE.
 
 Warning: This is not as easy as it seems... sometimes docker fails to start and you need to delete the /var/lib/docker folder, restart docker by hand and re-launch the registry.
