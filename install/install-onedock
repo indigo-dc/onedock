@@ -1,8 +1,5 @@
 #!/bin/bash
 apt-get install xmlstarlet jq
-cd /tmp/
-git clone https://github.com/indigo-dc/onedock
-cd onedock
 ./setup_files.sh
 cat >> /etc/one/oned.conf << EOT
 IM_MAD = [
