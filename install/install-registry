@@ -14,4 +14,4 @@ mkdir -p /etc/docker/certs.d/$HOSTNAME:5000/
 cp /var/lib/docker-registry/certs/domain.crt /etc/docker/certs.d/$HOSTNAME\:5000/
 cp /var/lib/docker-registry/certs/domain.crt /usr/local/share/ca-certificates/
 update-ca-certificates
-docker run -d -p 5000:5000 --restart=always --name registry -v /var/lib/docker-registry/data:/var/lib/registry -v /var/lib/docker-registry/certs:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key registry:2
+# docker run -d -p 5000:5000 --restart=always --name registry -v /var/lib/docker-registry/data:/var/lib/registry -v /var/lib/docker-registry/certs:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key registry:2

@@ -1,6 +1,9 @@
 #!/bin/bash
-apt-get install xmlstarlet jq
-./setup_files.sh
+apt-get install -y xmlstarlet jq git
+cd /tmp
+git clone https://github.com/indigo-dc/onedock
+cd onedock
+./setup_files.sh <<< y
 cat >> /etc/one/oned.conf << EOT
 IM_MAD = [
       name       = "onedock",
@@ -20,3 +23,4 @@ EOT
 sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' /etc/one/oned.conf
 echo "Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network" >> /etc/sudoers.d/opennebula
 sed -i.bak 's/^\(oneadmin ALL=.*\)$/\1, ONEDOCK/' /etc/sudoers.d/opennebula
+usermod -aG docker oneadmin

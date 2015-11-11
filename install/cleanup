@@ -1,0 +1,6 @@
+#!/bin/bash
+service docker stop
+cgroups-umount
+rm -rf /var/lib/docker/*
+cgroups-mount
+service docker start
