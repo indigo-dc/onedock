@@ -25,8 +25,8 @@ fi
 
 FOLDERS="im/onedock* vmm/onedock tm/onedock datastore/onedock"
 for F in $FOLDERS; do
-    if [ ! -d "$F" ]; then
-        cp -r "./$F" /var/lib/one/remotes/
+    if [ ! -d "/var/lib/one/remotes/$F" ]; then
+        cp -r "./$F" /var/lib/one/remotes/$(dirname $F)
     else
         cp ./$F/* "/var/lib/one/remotes/$F/"
     fi
