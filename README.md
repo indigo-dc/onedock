@@ -237,7 +237,7 @@ Then install as needed
       ``` $ sudo ./install/install-docker ```
 3. Install the docker-registry
       ``` $ sudo ./install/install-registry ```
-4. Install the docker-registry
+4. Launch the docker-registry
       ``` $ sudo ./install/launch-registry ```
 5. Follow the instructions in _Installation_ section or execute
       ``` $ sudo ./install/install-onedock ```
