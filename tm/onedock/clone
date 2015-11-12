@@ -39,10 +39,19 @@ DST_PATH=`arg_path $DST`
 DST_HOST=`arg_host $DST`
 DISK_ID=$(basename ${DST_PATH} | cut -d. -f2)
 
+DST_HOST=`arg_host $DST`
+DST_DIR=`dirname $DST_PATH`
+
 DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "one-$VMID" "$DISK_ID")
 
+DOCKERRUN=
 PROTOCOL=${SRC::9}
 if [ "$PROTOCOL" == "docker://" ]; then
+    read_xpath "$(onevm show -x $VMID)" "/VM/TEMPLATE/DISK[DISK_ID=$DISK_ID]/IMAGE_ID"
+    IMGID=${XPATH_ELEMENTS[0]}
+    read_xpath "$(oneimage show -x $IMGID)" "/IMAGE/TEMPLATE/DOCKERRUN"
+    DOCKERRUN=${XPATH_ELEMENTS[0]}
+
     DOCKER_IMG_NAME=${SRC:9}
     DOCKER_CMD="docker pull ${DOCKER_IMG_NAME}"
     ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error getting image ${DOCKER_IMG_NAME}"
@@ -65,6 +74,10 @@ fi
 
 DOCKER_CMD="docker tag -f $DOCKER_IMG_NAME $DISKIMAGENAME"
 ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error tagging the image $DOCKER_IMG_NAME as $DISKIMAGENAME"
+if [ "$DOCKERRUN" != "" ]; then
+    ssh_make_path $DST_HOST $DST_DIR
+    ssh_exec_and_log $DST_HOST "echo '$DOCKERRUN' > ${DST_PATH}.dockerrun"
+fi
 log_onedock_debug "image $DOCKER_IMG_NAME tagged as $DISKIMAGENAME"
 DOCKER_CMD="docker rmi $DOCKER_IMG_NAME"
 ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error removing image $DOCKER_IMG_NAME"

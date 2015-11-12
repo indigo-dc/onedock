@@ -113,7 +113,8 @@ function build_ns {
     local NSDOCK=
     PID=$(docker inspect -f '{{.State.Pid}}' $DOCKID)
     
-    if [ $? -ne 0 ]; then
+    if [ $? -ne 0 ] || [ $PID -eq 0 ]; then
+	echo "could not find container $DOCKID"
         finalize "could not find container $DOCKID"
     fi
     

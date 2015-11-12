@@ -36,7 +36,7 @@ IMAGEID="${XPATH_ELEMENTS[i++]}"
 DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
 
 CREATEDEPFILE=yes
-EXISTS=$(docker inspect -f '{{.State.Running}}' "$NAME")
+EXISTS=$(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null)
 if [ "$EXISTS" == "false" ]; then
     CREATEDEPFILE=no
     data=`docker start "$NAME"`
@@ -46,7 +46,16 @@ elif [ "$EXISTS" == "true" ]; then
 else
     cat > $ONEDOCK_DEPLOYMENT_FILE << EOF
 EOF
-    data=`docker run --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID /bin/bash 2>&1`
+    # data=`docker run --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID /bin/bash 2>&1`
+    ONEDOCK_DOCKERRUN=$(dirname $domain)/disk.0.dockerrun
+    if [ -e "$ONEDOCK_DOCKERRUN" ]; then
+	DOCKERRUNCMD="$(cat $ONEDOCK_DOCKERRUN)"
+    elif [ "$ONEDOCK_DEFAULT_DOCKERRUN" != "" ]; then
+	DOCKERRUNCMD="$ONEDOCK_DEFAULT_DOCKERRUN"
+    else
+	DOCKERRUNCMD=
+    fi
+    data=`docker run --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID $DOCKERRUNCMD 2>&1`
 fi
 
 if [ $? -eq 0 ]; then
