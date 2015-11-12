@@ -24,7 +24,7 @@ EOF
 
      cat > ubuntu-docker.tmpl << EOF
      NAME="ubuntu"
-     PATH=docker://corbinu/ssh-server
+     PATH=docker://rastasheep/ubuntu-sshd
      TYPE=OS
      DESCRIPTION="Ubuntu Trusty with SSHd"
 EOF

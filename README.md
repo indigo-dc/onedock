@@ -207,7 +207,21 @@ Notice that the very same OpenNebula interfaces are used but instead of deployin
 
 In the folder ```install``` you have a set of scripts that will help you deploy a testing environment.
 
-### 5.1 Scenario #1: Using it in a VM (or bare metal)
+### 5.1 Scenario #1: Using Vagrant
+
+1. Install [Vagrant](http://vagrantup.com/)
+2. cd vagrant
+3. vagrant up
+
+This installs OpenNebula with OneDock support.
+
+4. vagrant ssh
+5. sudo su - oneadmin
+6. onevm create --memory 512 --cpu 1 --disk ubuntu --nic private --net_context
+
+You can use ``onevm show`` to find out the IP and connect to the container using SSH.
+
+### 5.2 Scenario #2: Using it in a VM (or bare metal)
 
 Clone the repository and get into the folder
 ```bash
@@ -226,7 +240,7 @@ Then install as needed
 4. Follow the instructions in _Installation_ section or execute
       ``` $ sudo ./install/install-onedock ```
 
-### 5.2 Scenario #2: Using it into a lxc container
+### 5.3 Scenario #3: Using it into a lxc container
 
 If you want a single-node stand-alone installation of ONEDock, you can get a running _lxc_ container in an ubuntu 14.04 distro by simply executing the next commands (this installation assumes that you have installed lxc):
 
