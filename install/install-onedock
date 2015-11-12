@@ -24,3 +24,4 @@ sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[
 echo "Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network" >> /etc/sudoers.d/opennebula
 sed -i.bak 's/^\(oneadmin ALL=.*\)$/\1, ONEDOCK/' /etc/sudoers.d/opennebula
 usermod -aG docker oneadmin
+sudo service opennebula restart
