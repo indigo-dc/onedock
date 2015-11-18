@@ -221,12 +221,6 @@ This installs OpenNebula with OneDock support.
 
 You can use ``onevm show`` to find out the IP and connect to the container using SSH.
 
-OpenNebula Dashboard UI
-
-To see the entire dashboard just type ```http://localhost:9869``` in your browser, next it will ask for a user and password,
-the default user is ```oneadmin``` and the password will be shown when the process is finished.
-
-
 ### 5.2 Scenario #2: Using it in a VM (or bare metal)
 
 Clone the repository and get into the folder

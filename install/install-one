@@ -4,7 +4,7 @@ apt-get install -y apt-transport-https wget
 wget -q -O- http://downloads.opennebula.org/repo/Ubuntu/repo.key | apt-key add -
 echo "deb http://downloads.opennebula.org/repo/4.14/Ubuntu/14.04/ stable opennebula" > /etc/apt/sources.list.d/opennebula.list
 apt-get -y update
-apt-get -y install opennebula opennebula-node opennebula-sunstone
+apt-get -y install opennebula opennebula-node
 cp /var/lib/one/.ssh/id_rsa.pub /var/lib/one/.ssh/authorized_keys
 cat << EOT > /var/lib/one/.ssh/config
 Host *
@@ -13,5 +13,3 @@ Host *
 EOT
 chmod 600 /var/lib/one/.ssh/config /var/lib/one/.ssh/authorized_keys
 chown -R oneadmin:oneadmin /var/lib/one/.ssh
-sed -i "s/:host: 127.0.0.1/:host: 0.0.0.0/g" /etc/one/sunstone-server.conf
-/etc/init.d/opennebula-sunstone restart

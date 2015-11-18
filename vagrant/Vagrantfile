@@ -5,9 +5,6 @@ Vagrant.configure(2) do |config|
       vb.cpus = 1
     end
  
-  config.vm.network "forwarded_port", guest: 9869, host: 9869, guest_ip: "10.0.2.15", host_ip: "127.0.0.1"
-  config.vm.network "forwarded_port", guest: 29876, host: 29876, guest_ip: "10.0.2.15", host_ip: "127.0.0.1"
-
    config.vm.provision "shell", inline: <<-SHELL
      sudo apt-get update
      sudo apt-get install -y git
@@ -48,7 +45,7 @@ EOF
      onevnet create docker-private.net
 
      onehost create $HOSTNAME -i onedock -v onedock -n dummy
-     echo "User and Password for sunstone:"
+     echo "User and Password for oneadmin user:"
      cat /var/lib/one/.one/one_auth
    SHELL
 end
