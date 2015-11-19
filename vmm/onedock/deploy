@@ -59,18 +59,18 @@ EOF
 	DOCKERRUNCMD=
     fi
 
+    MEMORY_UNITY="M"
     if [ -z ${MEMORY:=512} ]; then
-     data_memory= echo "-m $MEMORY";
+     data_memory="-m $MEMORY$MEMORY_UNITY";
     else
-     data_memory= echo "-m $MEMORY";
+     data_memory="-m $MEMORY$MEMORY_UNITY";
     fi
 
     if [ -z ${CPU:=1} ]; then
-     data_cpu= echo "-c $CPU";
+     data_cpu="--cpu-shares=$CPU";
     else
-     data_cpu= echo "-c $CPU";
+     data_cpu="--cpu-shares=$CPU";
     fi
-
     data=`docker run $data_memory $data_cpu --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID $DOCKERRUNCMD 2>&1`
 fi
 
