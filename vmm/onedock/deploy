@@ -2,6 +2,7 @@
 #
 # ONEDock - Docker support for ONE (as VMs)
 # Copyright (C) GRyCAP - I3M - UPV 
+# Copyright 2015, Atos Spain SA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,13 +27,15 @@ mkdir -p `dirname $domain`
 cat > $domain
 
 ONEDOCK_DEPLOYMENT_FILE=$(dirname $domain)/deployment.onedock
-read_xpath "$(cat $domain)" "/VM/ID" "/VM/NAME" "/VM/TEMPLATE/DISK/IMAGE_ID"
+read_xpath "$(cat $domain)" "/VM/ID" "/VM/NAME" "/VM/TEMPLATE/DISK/IMAGE_ID" "/VM/TEMPLATE/MEMORY" "/VM/TEMPLATE/CPU"
 
 unset i
 
 VMID="${XPATH_ELEMENTS[i++]}"
 NAME="${XPATH_ELEMENTS[i++]}"
 IMAGEID="${XPATH_ELEMENTS[i++]}"
+MEMORY="${XPATH_ELEMENTS[i++]}"
+CPU="${XPATH_ELEMENTS[i++]}"
 DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
 
 CREATEDEPFILE=yes
@@ -55,7 +58,20 @@ EOF
     else
 	DOCKERRUNCMD=
     fi
-    data=`docker run --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID $DOCKERRUNCMD 2>&1`
+
+    MEMORY_UNITY="M"
+    if [ -z ${MEMORY:=512} ]; then
+     data_memory="-m $MEMORY$MEMORY_UNITY";
+    else
+     data_memory="-m $MEMORY$MEMORY_UNITY";
+    fi
+
+    if [ -z ${CPU:=1} ]; then
+     data_cpu="--cpu-shares=$CPU";
+    else
+     data_cpu="--cpu-shares=$CPU";
+    fi
+    data=`docker run $data_memory $data_cpu --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID $DOCKERRUNCMD 2>&1`
 fi
 
 if [ $? -eq 0 ]; then

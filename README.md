@@ -193,12 +193,39 @@ The use of $HOSTNAME in this particular case is for using the OpenNebula front-e
 
 ### 4.5 Docker container deployment
 
-Finally you can deploy one Docker container out of that image:
+#### 4.5.1 Creating a Container Template
+
+You have to create a template to be used to run containers. An example (as oneadmin), that has to be customized for your new container can be:
+
+```bash
+$ cat > onedock.vm << EOF
+NAME = container
+CPU = 2
+MEMORY = 1024
+DISK = [ IMAGE_ID=0 ]
+NIC = [ NETWORK_ID=0 ]
+CONTEXT = [
+        NETWORK = "YES"
+]
+EOF
+$ onetemplate create onedock.vm
+```
+
+Finally you can deploy one Docker container instantiating the new template:
+
+```bash
+onetemplate instantiate container
+```
+
+(where the parameter ```container``` points to the just created template name).
+
+#### 4.5.1 Creating a Container by Command Line Interface (onevm: manages OpenNebula virtual machines)
+
+You can run containers directly running the CLI onevm. An example (as oneadmin), that has to be customized for your new container can be:
 
 ```bash
 onevm create --memory 512 --cpu 1 --disk ubuntu --nic private --net_context
 ```
-
 (where the parameter --disk ubuntu points to the just created image id).
 
 Notice that the very same OpenNebula interfaces are used but instead of deploying a VM, a Docker container.

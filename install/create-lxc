@@ -30,9 +30,9 @@ for CMD in $COMMANDS; do
 	lxc-start -n $NAME -f $NAME.install.config
 	sleep 5s
 	lxc-attach -n $NAME -- /opt/setup/$CMD
-	lxc-stop -n ashlan
+	lxc-stop -n $NAME
 done
-lxc-start -n ashlan
+lxc-start -n $NAME
 sleep 5s
 lxc-attach -n $NAME -- docker run -d -p 5000:5000 --restart=always --name registry -v /var/lib/docker-registry/data:/var/lib/registry -v /var/lib/docker-registry/certs:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key registry:2
 rm -f ./$NAME.install.config
