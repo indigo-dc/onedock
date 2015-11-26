@@ -36,8 +36,6 @@ function setup_frontend {
         LIB_LOCATION=$ONE_LOCATION/lib
     fi
     
-    . $LIB_LOCATION/sh/scripts_common.sh
-    
     source ${DRIVER_PATH}/../../datastore/libfs.sh
     export LIB_LOCATION
     export XPATH_APP="${DRIVER_PATH}/../../datastore/xpath.rb"

@@ -34,6 +34,7 @@ VMID="${XPATH_ELEMENTS[i++]}"
 NAME="${XPATH_ELEMENTS[i++]}"
 IMAGEID="${XPATH_ELEMENTS[i++]}"
 DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
+DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "one-$VMID" "0")
 
 CREATEDEPFILE=yes
 EXISTS=$(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null)
@@ -55,7 +56,7 @@ EOF
     else
 	DOCKERRUNCMD=
     fi
-    data=`docker run --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID $DOCKERRUNCMD 2>&1`
+    data=`docker run --net="none" -td --name $NAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
 fi
 
 if [ $? -eq 0 ]; then
