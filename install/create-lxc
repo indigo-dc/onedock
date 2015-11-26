@@ -27,7 +27,7 @@ lxc.mount.entry=$PWD opt/setup none bind,create=dir 0 0
 EOT
 COMMANDS="install-base install-one install-docker install-registry install-onedock cleanup"
 for CMD in $COMMANDS; do
-	lxc-start -n $NAME -f $NAME.install.config
+	lxc-start -d -n $NAME -f $NAME.install.config
 	sleep 5s
 	lxc-attach -n $NAME -- /opt/setup/$CMD
 	lxc-stop -n $NAME

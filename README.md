@@ -139,9 +139,9 @@ Then you have to create a image in the new datastore. An example (as oneadmin):
 ```bash
 $ cat > ubuntu-docker.tmpl << EOF
 NAME="ubuntu"
-PATH=docker://ubuntu:latest
+PATH=docker://rastasheep/ubuntu-sshd
 TYPE=OS
-DESCRIPTION="Imagen de Ubuntu"
+DESCRIPTION="Ubuntu Trusty with SSHd"
 EOF
 $ oneimage create -d onedock ubuntu-docker.tmpl
 ```
