@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+BASEDIR=$(dirname $0)
 read -p "this will overwrite files. proceed? (y/N) " OVERWRITE
 OVERWRITE=$(echo $OVERWRITE | tr '[a-z]' '[A-Z]')
 
@@ -24,7 +24,7 @@ exit
 fi
 
 FOLDERS="im/onedock* vmm/onedock tm/onedock datastore/onedock"
-for F in $FOLDERS; do
+for F in $BASEDIR/$FOLDERS; do
     if [ ! -d "/var/lib/one/remotes/$F" ]; then
         cp -r "./$F" /var/lib/one/remotes/$(dirname $F)
     else
