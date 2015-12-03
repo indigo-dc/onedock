@@ -1,0 +1,121 @@
+#!/bin/bash
+#
+# ONEDock - Docker support for ONE (as VMs)
+# Copyright (C) GRyCAP - I3M - UPV 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# References:
+# https://newspaint.wordpress.com/2015/03/29/how-can-i-access-a-block-device-such-as-cdrom-in-lxc/
+# http://www.reactivated.net/writing_udev_rules.html
+# http://ram.kossboss.com/mknod-mdev-udev-udevadm/
+# http://askubuntu.com/questions/566558/mount-qcow2-image-using-qemu-nbd-within-a-container
+#
+# This script relies on the fact that the host that hosts the container has
+#   nbd support. That means that the following command has been executed (or
+#   any equivalent):
+#
+#   $ modprobe nbd max_part=16
+
+#
+# Why this? because LXC does not create the nbd devices needed to use qemu-nbd
+# so we are creating them (this will work if the lxc container has permission
+# to use the nbd device).
+# The permissions to manage nbd devices are enabled by starting the lxc container
+# with a configuration file with the next lines:
+#
+#   lxc.include = /var/lib/lxc/<containername>/config
+#
+#   # Allow the container to mknod (needed by qemu-nbd...)
+#   lxc.cgroup.devices.allow = c *:* m
+#   lxc.cgroup.devices.allow = b *:* m
+#
+#   # Allow the container to use the host's nbd devices
+#   lxc.cgroup.devices.allow = b 43:* rwm # Every nbd device in the host
+#
+cat > /etc/init.d/add-nbd << \EOT
+#!/bin/bash
+if [ "$1" == "start" ]; then
+        for device in /sys/devices/virtual/block/nbd*; do
+                RES="$(udevadm info --query=property $device)"
+                IFS=\= read _ SUBSYSTEM <<< $(echo "$RES"|grep SUBSYSTEM)
+                if [ "$SUBSYSTEM" == "block" ]; then
+                        IFS=\= read _ DEVNAME <<< $(echo "$RES"|grep DEVNAME)
+                        if [ "$DEVNAME" != "" ] && [ ! -b "$DEVNAME" ]; then
+                                IFS=\= read _ MAJOR <<< $(echo "$RES"|grep MAJOR)
+                                IFS=\= read _ MINOR <<< $(echo "$RES"|grep MINOR)
+                                mknod -m 660 $DEVNAME b $MAJOR $MINOR
+                        fi
+                fi
+        done
+fi
+EOT
+
+chmod +x /etc/init.d/add-nbd
+/etc/init.d/add-nbd start
+update-rc.d add-nbd defaults 99
+
+# Why this? because in lxc the creation of the nodes corresponding to the partitions
+# in the nbd devices are not created when the device is connected using the qemu-nbd
+# application. So we need a udev rule that is triggered when a partition is added
+# and an app that creates the devices to allow mounting them.
+cat > /etc/udev/nbd-partitions << \EOT
+#!/bin/bash
+#
+# ONEDock - Docker support for ONE (as VMs)
+# Copyright (C) GRyCAP - I3M - UPV 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+if [ "$DEVTYPE" == "partition" ]; then
+        if [ "$ACTION" == "add" ]; then
+                mknod -m 660 $DEVNAME b $MAJOR $MINOR
+                chown :disk $DEVNAME
+        elif [ "$ACTION" == "remove" ]; then
+                rm $DEVNAME
+        fi
+fi
+EOT
+chmod +x /etc/udev/nbd-partitions
+
+cat > /etc/udev/rules.d/99-nbd.rules << \EOT
+#
+# ONEDock - Docker support for ONE (as VMs)
+# Copyright (C) GRyCAP - I3M - UPV 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+KERNEL=="nbd[0-9]*", ACTION=="add", SUBSYSTEM=="block", RUN+="/etc/udev/nbd-partitions"
+KERNEL=="nbd[0-9]*", ACTION=="remove", SUBSYSTEM=="block", RUN+="/etc/udev/nbd-partitions"
+EOT
