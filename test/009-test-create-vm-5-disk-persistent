@@ -1,15 +1,26 @@
 #!/bin/bash
 source $(dirname $0)/test-common.sh
 set -e
+set -o pipefail
 
-echo "testing the creation of VM with volatile volumes"
+printf "testing the creation of VM with a volume in default datastore "
+
+progress
+
+IMGID=$(oneimage create -d default --name data --type DATABLOCK --size 200 --fstype ext3 --persistent | awk '{ print $2 }')
+while [ "$(oneimage show $IMGID -x | /var/lib/one/remotes/datastore/xpath.rb /IMAGE/STATE)" == "4" ]; do
+    spin
+    sleep 2
+done
+
+progress
 
 cat > /tmp/onedock.vm << EOT
-NAME = container
+NAME = container-img-$IMGID
 CPU = 1
 MEMORY = 1024
 DISK = [ IMAGE=ubuntu ]
-DISK = [ TYPE=fs, SIZE=100,FORMAT=ext3 ]
+DISK = [ IMAGE_ID=$IMGID ]
 NIC = [ NETWORK_ID=0 ]
 CONTEXT = [ NETWORK = "YES" ]
 EOT
@@ -33,7 +44,7 @@ do
     sleep 2
 done
 # Wait a little more, until running state
-wait_for 30
+wait_for_timeout_nequal 30 1 "onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/STATE" "3"
 
 progress
 
@@ -41,6 +52,8 @@ progress
 [ "$(onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/STATE)" != "3" ] && exit 1
 
 progress
+
+wait_for 10
 
 # Do a ping to check the machine
 IP=$(onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/TEMPLATE/NIC/IP)
@@ -63,7 +76,13 @@ SIZE=$(cat /sys/class/block/$(basename $DEVICE)/size)
 
 progress
 
-onevm delete $VMID
+onevm shutdown $VMID > /dev/null
+
+wait_for 10
+
+[ "$(oneimage show $IMGID -x | /var/lib/one/remotes/datastore/xpath.rb /IMAGE/STATE)" != "1" ] && exit 1
+
+oneimage delete $IMGID > /dev/null
 
 progress
 
