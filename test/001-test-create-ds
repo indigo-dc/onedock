@@ -1,0 +1,12 @@
+#!/bin/bash
+cat > /tmp/onedock.ds << EOF
+NAME=onedock
+DS_MAD=onedock
+TM_MAD=onedock
+EOF
+
+onedatastore create /tmp/onedock.ds
+sleep 2
+onedatastore list | grep onedock | awk '{if($3 != "0M"){ exit 0 } else { exit 1 }}'
+onedatastore list | grep onedock | awk '{if($10 == "on"){ exit 0 } else { exit 1 }}'
+exit 0
