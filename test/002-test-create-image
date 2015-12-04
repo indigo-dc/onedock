@@ -1,7 +1,7 @@
 #!/bin/bash
 source $(dirname $0)/test-common.sh
-set -e
-set -o pipefail
+
+printf "creating image "
 
 cat > /tmp/ubuntu-docker.tmpl << \EOF
 NAME="ubuntu"
@@ -19,13 +19,18 @@ sleep 2
 progress
 
 # Check the image creation status
-wait_for_timeout_nequal 30 0.5 "oneimage show -x $IMGID | /var/lib/one/remotes/datastore/xpath.rb /IMAGE/STATE" "1"
+CMD="oneimage show -x $IMGID | /var/lib/one/remotes/datastore/xpath.rb /IMAGE/STATE"
+wait_for_timeout_nequal 300 0.5 "$CMD" "1"
+check_cmd_neq "$CMD" "1" && exit 1
 
-[ "$(oneimage show -x $IMGID | /var/lib/one/remotes/datastore/xpath.rb /IMAGE/STATE)" != "1" ] && exit 1
+progress
 
 # Check that the image is ready (any other state will generate an error)
-oneimage list | grep ubuntu | awk '{if($9 == "rdy"){ exit 0 } else { exit 1 }}'
+# oneimage list | grep ubuntu | awk '{if($9 == "rdy"){ exit 0 } else { exit 1 }}'
 
 # Check that the image exists in the repository
 curl -s -k -X GET https://$HOSTNAME:5000/v2/_catalog | grep image4one
 curl -s -k -X GET https://$HOSTNAME:5000/v2/image4one/tags/list | grep 0
+
+echo "succeed"
+exit 0

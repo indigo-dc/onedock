@@ -1,4 +1,7 @@
 #!/bin/bash
+set -e
+set -o pipefail
+
 export spinstr='|/-\'
 function spin()
 {
@@ -18,6 +21,15 @@ function wait_for()
 		spin
 		sleep 0.5
 	done
+}
+
+function check_cmd_eq() {
+	[ "$(eval $1)" == "$2" ] && return 0
+	return 1
+}
+function check_cmd_neq() {
+	[ "$(eval $1)" != "$2" ] && return 0
+	return 1
 }
 
 function wait_for_timeout_equal()
@@ -47,4 +59,5 @@ function wait_for_timeout_nequal()
                 sleep $STEP
         done
 }
+
 
