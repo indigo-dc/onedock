@@ -115,7 +115,7 @@ function _split_dock_name {
         TAG=
         IMAGE=$1
 
-        IFS=/ read F1 F2 F3 <<< $IMAGE
+        IFS=/ read F1 F2 F3 <<< "$IMAGE"
         if [ "$F3" != "" ]; then
                 # F3 es la imagen       
                 IMAGE=$F3
@@ -147,7 +147,8 @@ function split_dock_name {
     _S3=${3:-_S3}
     _S4=${4:-_S4}
     _S5=${5:-_S5}
-    IFS=/ read $_S2 $_S3 $_S4 $_S5 <<< $(IFS= _split_dock_name $1)
+    IMAGENAME=$(IFS= _split_dock_name $1)
+    IFS=/ read $_S2 $_S3 $_S4 $_S5 <<< "$IMAGENAME"
     [ "$2" != "" ] && export $2
     [ "$3" != "" ] && export $3
     [ "$4" != "" ] && export $4
