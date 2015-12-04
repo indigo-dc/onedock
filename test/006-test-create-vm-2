@@ -1,33 +1,18 @@
 #!/bin/bash
-set -e
+source $(dirname $0)/test-common.sh
 
-# Create a vm
-VMID=$(onevm create --memory 512 --cpu 1 --disk ubuntu --nic private --net_context | awk '{print $2}')
+progress
 
-# Froce deploying just in case that it has not enough cores
-onevm deploy $VMID $HOSTNAME
+cat > /tmp/onedock.vm << EOT
+NAME = container-img-second-vm
+CPU = 1
+MEMORY = 128
+DISK = [ IMAGE=ubuntu ]
+NIC = [ NETWORK_ID=0 ]
+CONTEXT = [ NETWORK = "YES" ]
+EOT
 
-# Check pending state
-while [ "$(onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/STATE)" == "1" ];
-do
-    sleep 2
-done
-# Wait a little more, until running state
-sleep 30
+create_vm /tmp/onedock.vm
 
-# Check running state
-[ "$(onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/STATE)" != "3" ] && exit 1 
-
-# Do a ping to check the machine
-IP=$(onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/TEMPLATE/NIC/IP)
-ping -c 3 $IP > /dev/null
-
-# Check the docker containers
-[ "$(docker ps | grep one-$VMID)" == "" ] && exit 1
-# Check the state of the container 
-[ "$(docker inspect -f '{{.State.Running}}' one-$VMID)" == "" ] && exit 1
-# Check the images repository
-[ "$(docker images | grep "one-$VMID")" == "" ] && exit 1
-
-echo "testing second vm creation suceeded"
+echo "testing first vm creation suceeded"
 exit 0

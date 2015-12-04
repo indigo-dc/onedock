@@ -2,7 +2,7 @@
 source $(dirname $0)/test-common.sh
 set -e
 
-echo "testing the creation of VM with volatile volumes"
+printf "testing the creation of VM with volatile volumes "
 
 cat > /tmp/onedock.vm << EOT
 NAME = container
@@ -16,44 +16,7 @@ EOT
 
 progress
 
-# Create a vm
-VMID=$(onevm create /tmp/onedock.vm | awk '{print $2}')
-
-progress
-
-# Froce deploying just in case that it has not enough cores
-onevm deploy $VMID $HOSTNAME
-
-progress
-
-# Check pending state
-while [ "$(onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/STATE)" == "1" ];
-do
-    spin
-    sleep 2
-done
-# Wait a little more, until running state
-wait_for 30
-
-progress
-
-# Check running state
-[ "$(onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/STATE)" != "3" ] && exit 1
-
-progress
-
-# Do a ping to check the machine
-IP=$(onevm show -x $VMID | /var/lib/one/remotes/datastore/xpath.rb /VM/TEMPLATE/NIC/IP)
-ping -c 3 $IP > /dev/null
-
-progress
-
-# Check the docker containers
-[ "$(docker ps | grep one-$VMID)" == "" ] && exit 1
-# Check the state of the container 
-[ "$(docker inspect -f '{{.State.Running}}' one-$VMID)" == "" ] && exit 1
-# Check the images repository
-[ "$(docker images | grep "one-$VMID")" == "" ] && exit 1
+create_vm /tmp/onedock.vm
 
 progress
 
