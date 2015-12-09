@@ -45,6 +45,20 @@ EOF
      onevnet create docker-private.net
 
      onehost create $HOSTNAME -i onedock -v onedock -n dummy
+
+     cat > onedock.vm << EOF
+     NAME = container
+     CPU = 1
+     MEMORY = 512
+     DISK = [ IMAGE_ID=0 ]
+     NIC = [ NETWORK_ID=0 ]
+     CONTEXT = [
+            NETWORK = "YES"
+     ]
+EOF
+
+     onetemplate create onedock.vm
+
      echo "User and Password for oneadmin user:"
      cat /var/lib/one/.one/one_auth
    SHELL
