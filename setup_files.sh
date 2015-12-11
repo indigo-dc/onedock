@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BASEDIR=$(dirname $0)
+BASEDIR=$(cd $(dirname $0) && pwd && cd - > /dev/null)
 read -p "this will overwrite files. proceed? (y/N) " OVERWRITE
 OVERWRITE=$(echo $OVERWRITE | tr '[a-z]' '[A-Z]')
 
@@ -23,17 +23,17 @@ if [ "$OVERWRITE" != "Y" ]; then
 exit
 fi
 
-FOLDERS="im/onedock* vmm/onedock tm/onedock datastore/onedock"
-for F in $BASEDIR/$FOLDERS; do
+FOLDERS="im/onedock.d im/onedock-probes.d vmm/onedock tm/onedock datastore/onedock"
+for F in $FOLDERS; do
     if [ ! -d "/var/lib/one/remotes/$F" ]; then
-        cp -r "./$F" /var/lib/one/remotes/$(dirname $F)
+        cp -r "$BASEDIR/$F" /var/lib/one/remotes/$(dirname $F)
     else
-        cp ./$F/* "/var/lib/one/remotes/$F/"
+        cp $BASEDIR/$F/* "/var/lib/one/remotes/$F/"
     fi
 done
         
-cp onedock.sh /var/lib/one/remotes/
-cp docker-manage-network /var/lib/one/remotes/
+cp $BASEDIR/onedock.sh /var/lib/one/remotes/
+cp $BASEDIR/docker-manage-network /var/lib/one/remotes/
 
 if [ ! -e /var/lib/one/remotes/onedock.conf ]; then
 cat > /var/lib/one/remotes/onedock.conf << EOF
