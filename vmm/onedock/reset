@@ -18,8 +18,8 @@
 
 DRIVER_PATH=$(dirname $0)
 source ${DRIVER_PATH}/../../onedock.sh
-log_onedock_debug "$0 $@"
 setup_wn
+log_onedock_debug "$0 $@"
 
 DEPLOY_FILE=$1
 DEPLOY_HOST=$2

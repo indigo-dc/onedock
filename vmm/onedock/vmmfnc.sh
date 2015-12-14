@@ -34,7 +34,6 @@ function setup_disk {
     TARGET=$3
     DEVICESFILE=$4
     
-    #NBD_TGT=/dev/nbd1
     NBD_TGT=$(find_nbd)
     if [ "$NBD_TGT" == "" ]; then
         echo "could not find free devices to connect disk $DISK_ID"
