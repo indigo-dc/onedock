@@ -76,7 +76,7 @@ function log_onedock {
 	if [ "$ONEDOCK_LOGFILE" != "" ]; then
 		echo "$(date -R) - $@" >> "$ONEDOCK_LOGFILE"
 	else
-		echo "$(date -R) - $@"
+		echo "$(date -R) - $@" >&2
 	fi
 }
 
@@ -85,7 +85,7 @@ function log_onedock_debug {
 		if [ "$ONEDOCK_LOGFILE" != "" ]; then
 			echo "$(date -R) - $@" >> "$ONEDOCK_LOGFILE"
 		else
-			echo "$(date -R) - $@"
+			echo "$(date -R) - $@" >&2
 		fi
 	fi
 }

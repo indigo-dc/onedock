@@ -1,0 +1,50 @@
+#!/bin/bash
+source $(dirname $0)/test-common.sh
+set -e
+set -o pipefail
+
+printf "testing the creation of VM with a volume in default datastore "
+
+progress
+
+IMGID=$(oneimage create -d default --name data --type DATABLOCK --size 200 --fstype ext3 | awk '{ print $2 }')
+while [ "$(oneimage show $IMGID -x | /var/lib/one/remotes/datastore/xpath.rb /IMAGE/STATE)" == "4" ]; do
+    spin
+    sleep 2
+done
+
+progress
+
+cat > /tmp/onedock.vm << EOT
+NAME = container-img-$IMGID
+CPU = 1
+MEMORY = 1024
+DISK = [ IMAGE=ubuntu ]
+DISK = [ IMAGE_ID=$IMGID ]
+NIC = [ NETWORK_ID=0 ]
+CONTEXT = [ NETWORK = "YES" ]
+EOT
+
+create_vm /tmp/onedock.vm
+
+progress
+
+DEVICE=$(docker inspect -f '{{range .HostConfig.Devices}}{{.PathOnHost}}{{end}}' one-$VMID)
+SIZE=$(cat /sys/class/block/$(basename $DEVICE)/size)
+[ $SIZE -eq 0 ] && exit 1
+
+progress
+
+onevm delete $VMID > /dev/null
+oneimage delete $IMGID > /dev/null
+
+progress
+
+wait_for 10
+
+SIZE=$(cat /sys/class/block/$(basename $DEVICE)/size)
+[ $SIZE -ne 0 ] && exit 1
+
+echo "suceeded"
+exit 0
+

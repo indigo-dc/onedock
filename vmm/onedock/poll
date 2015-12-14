@@ -18,7 +18,6 @@
 
 DRIVER_PATH=$(dirname $0)
 source ${DRIVER_PATH}/../../onedock.sh
-log_onedock_debug "$0 $@"
 setup_wn
 
 function mem_to_mb {
@@ -59,12 +58,16 @@ function dump_container_info {
 
 # CONTAINERS=$(docker ps -aq)
 if [ "$1" == "" ]; then
-	CONTAINERS=$(docker ps -q)
+	CONTAINERS=$(docker ps -q 2>/dev/null)
+        [ $? -ne 0 ] && echo "failed to connect to docker" && exit 1
 else
 	CONTAINERS=$1
 fi
-CONTAINERS_JSON=$(docker inspect $CONTAINERS)
-[ $? -ne 0 ] && echo "could not poll $CONTAINERS" && exit 1
-for CID in $CONTAINERS; do
-	dump_container_info $CID
-done
+
+if [ "$CONTAINERS" != "" ]; then
+    CONTAINERS_JSON=$(docker inspect $CONTAINERS)
+    [ $? -ne 0 ] && echo "could not poll $CONTAINERS" && exit 1
+    for CID in $CONTAINERS; do
+            dump_container_info $CID
+    done
+fi

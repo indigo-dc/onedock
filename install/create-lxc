@@ -23,13 +23,13 @@ fi
 
 cat >> ./$NAME.install.config << EOT
 lxc.include = /var/lib/lxc/$NAME/config
-lxc.mount.entry=$PWD opt/setup none bind,create=dir 0 0
+lxc.mount.entry=$PWD/.. opt/onedock none bind,create=dir 0 0
 EOT
-COMMANDS="install-base install-one install-docker install-registry install-onedock cleanup"
+COMMANDS="install-base install-one install-docker install-registry install-onedock cleanup lxc-nbd-support"
 for CMD in $COMMANDS; do
 	lxc-start -d -n $NAME -f $NAME.install.config
 	sleep 5s
-	lxc-attach -n $NAME -- /opt/setup/$CMD
+	lxc-attach -n $NAME -- /opt/onedock/install/$CMD
 	lxc-stop -n $NAME
 done
 lxc-start -d -n $NAME
