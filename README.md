@@ -1,6 +1,15 @@
 # ONEDock
 This project intends to provide support for OpenNebula to create Docker containers and deliver them to the end user as if they were Virtual Machines.
 
+## Index
+* [0. FAQ (what to expect from ONEDock)](#0-faq-what-to-expect-from-onedock)
+* [1. Assumptions](#1-assumptions)
+* [2. Environment](#2-environment)
+* [3. Installation](#3-installation)
+* [4. Using ONEDock](#4-using-onedock)
+* [5. Quick deployment of a testing environment](#5-quick-deployment-of-a-testing-environment)
+* [6. Advanced usage](#6-advanced-usage)
+
 ## 0. FAQ (what to expect from ONEDock)
 
 ### What is ONEDock?
@@ -41,15 +50,46 @@ You have a linux installation with [OpenNebula](http://www.opennebula.org) on it
 
 This project has been tested under the following environment (for both the front-end and the working nodes)
 * Ubuntu 14.04
-* jq package installed
+* jq, xmlstarlet, bridge-utils and qemu-utils packages installed
 * ONE 4.12
+* Docker 1.9
 * user oneadmin is able to execute docker (i.e. is in group "docker"; usermod -aG docker oneadmin)
 
 ## 3. Installation
 
 ### 3.1 Front-end node
 
-Once both OpenNebula and the jq package have been installed, you can install ONEDock as follows (as root user):
+#### 3.1.1 Prerrequisites
+
+##### 3.1.1.1. OpenNebula
+You have to install OpenNebula (i.e. installing the opennebula-node package, the shared directories, the network bridge, etc.). That means that the OpenNebula node should be installed as if it was going to run KVM Virtual Machines. You can follow the instructions in the official OpenNebula documentation (e.g. [for Ubuntu](http://docs.opennebula.org/4.14/design_and_installation/quick_starts/qs_ubuntu_kvm.html)).
+
+##### 3.1.1.2 Docker
+Then you have to install Docker, according to the official documentation (e.g. for [Ubuntu](https://docs.docker.com/engine/installation/ubuntulinux/)).
+
+You need to install a Docker Registry v2.0 that is usable from all the nodes. Its name must be included in the variable ```LOCAL_SERVER``` in the file ```/var/lib/one/remotes/onedock.conf```.
+
+_REMEMBER_ to install the certificates of your Docker registry in the proper directories. The most easy way to install the certificate is to copy it into the folder ```/etc/docker/certs.d/$HOSTNAME:5000/```. But you should copy it for the whole system in case that you want to use other commands (e.g. curl).
+
+For the case of ubuntu, you can use a code like this:
+
+```bash
+mkdir -p /etc/docker/certs.d/onedockdemo:5000/
+cp domain.crt /usr/local/share/ca-certificates/
+cp domain.crt /etc/docker/certs.d/onedockdemo:5000/
+update-ca-certificates
+```
+
+##### 3.1.1.3 Required packages
+Now install the required packages: jq, xmlstarlet, qemu-utils and bridge-utils.
+
+```bash
+apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
+```
+
+#### 3.1.2 Installation of ONEDock and activating it in ONE
+
+Once OpenNebula, Docker, a Docker Registry and the required packages have been installed, you can install ONEDock as follows (as root user):
 
 ```bash
 cd /tmp/
@@ -62,8 +102,6 @@ ONEDock will be installed. Then you should adjust the variables in ```/var/lib/o
 
 * LOCAL_SERVER points to the local docker registry
 * DATASTORE_DATA_PATH points to the folder in which the images in the docker registry are stored
-
-#### 3.1.1 Activate ONEDock in ONE
 
 In order to activate ONEDock in ONE, you just need to update the /etc/one/oned.conf file.
 
@@ -101,16 +139,95 @@ DATASTORE_MAD = [
 ```
 ### 3.2 Computing nodes
 
+#### 3.2.1 Installation of OpenNebula, Docker and the required packages
+
+##### 3.2.1.1. OpenNebula
+You have to install OpenNebula (i.e. installing the opennebula-node package, the shared directories, the network bridge, etc.). That means that the OpenNebula node should be installed as if it was going to run KVM Virtual Machines. You can follow the instructions in the official OpenNebula documentation (e.g. [for Ubuntu](http://docs.opennebula.org/4.14/design_and_installation/quick_starts/qs_ubuntu_kvm.html)).
+
+##### 3.2.1.2 Docker
+Then you have to install Docker, according to the official documentation (e.g. for [Ubuntu](https://docs.docker.com/engine/installation/ubuntulinux/)).
+
+_REMEMBER_ to install the certificates of your Docker registry in the proper directories. The most easy way to install the certificate is to copy it into the folder ```/etc/docker/certs.d/$HOSTNAME:5000/```. But you should copy it for the whole system in case that you want to use other commands (e.g. curl).
+
+For the case of ubuntu, you can use a code like this:
+
+```bash
+mkdir -p /etc/docker/certs.d/onedockdemo:5000/
+cp domain.crt /usr/local/share/ca-certificates/
+cp domain.crt /etc/docker/certs.d/onedockdemo:5000/
+update-ca-certificates
+```
+
+##### 3.2.1.3 Required packages
+Now install the required packages: jq, xmlstarlet, qemu-utils and bridge-utils.
+
+```bash
+apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
+```
+
+##### 3.2.1.4 Full code for impatients
+
+If you are impatient, you can try the following code, which works for Ubuntu 14.04, but this step is very dependent from your installation and you should check out what are you doing:
+
+```bash
+# Keys de ONE
+wget -q -O- http://downloads.opennebula.org/repo/Ubuntu/repo.key | apt-key add
+echo "deb http://downloads.opennebula.org/repo/4.14/Ubuntu/14.04/ stable opennebula" > /etc/apt/sources.list.d/opennebula.list
+
+# Keys de Docker
+apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+cat << EOT > /etc/apt/sources.list.d/docker.list
+# Ubuntu Trusty 14.04 (LTS)
+deb https://apt.dockerproject.org/repo ubuntu-trusty main
+EOT
+
+# Instalacion de docker y one
+apt-get -y update
+apt-get -y install opennebula-node nfs-common bridge-utils docker-engine jq xmlstarlet
+
+# The oneadmin user should be able to run docker
+usermod -aG docker oneadmin
+
+# Starting the nbd module and setting it persistent
+modprobe nbd max_part=16
+echo "nbd" >> /etc/modules
+
+cat > /etc/modprobe.d/nbd.conf <<\EOT
+options nbd max_part=16
+EOT
+
+# Creating a bridge for the ONE network
+cat > /etc/network/interfaces <<\EOT
+auto lo
+iface lo inet loopback
+
+auto br0
+iface br0 inet dhcp
+    bridge_ports    eth0
+    bridge_stp      off
+    bridge_maxwait  0
+    bridge_fd       0
+EOT
+```
+
+#### 3.2.2 Preparing ONE for ONEDock
+
 You need to update the file ```/etc/sudoers.d/opennebula``` to add the file that will configure the network. You need to add the line
 
 ```bash
-Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network
+Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd
 ```
 
 And to activate this alias appending the alias in the following line
 
 ```bash
 oneadmin ALL=(ALL) NOPASSWD: ONE_MISC, ONE_NET, ONE_LVM, ONE_ISCSI, ONE_OVS, ONE_XEN, ONEDOCK
+```
+
+Also you need to add the ```oneadmin``` user to the ```docker``` group, in order to be able to run docker containers.
+
+```bash
+usermod -aG docker oneadmin
 ```
 
 ## 4. Using ONEDock
@@ -150,7 +267,7 @@ The PATH can be set to a real image in docker hub (prepending _docker://_ and us
 
 ### 4.3 Creating a virtual network
 
-You have to create a virtual network to be used for the containers. An example (as oneadmin), that has to be customized for your network:
+You have to create a virtual network to be used for the containers. An example (as oneadmin), that has to be customized for your network and your bridge:
 ```bash
 $ cat > docker-private.net << EOF
 NAME=private
