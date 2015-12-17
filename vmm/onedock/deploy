@@ -30,12 +30,14 @@ DATASTOREFOLDER=$(dirname $domain)
 
 ONEDOCK_NETWORK_FILE=$(dirname $domain)/deployment.network
 ONEDOCK_DEVICES_FILE=$(dirname $domain)/deployment.devices
-read_xpath "$DOMXML" "/VM/ID" "/VM/NAME"
+read_xpath "$DOMXML" "/VM/ID" "/VM/NAME" "/VM/TEMPLATE/MEMORY" "/VM/TEMPLATE/CPU"
 
 unset i
 
 VMID="${XPATH_ELEMENTS[i++]}"
 NAME="${XPATH_ELEMENTS[i++]}"
+MEMORY="${XPATH_ELEMENTS[i++]}"
+CPU="${XPATH_ELEMENTS[i++]}"
 DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
 CONTAINERNAME=one-$VMID
 DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$CONTAINERNAME" "0")
@@ -66,10 +68,21 @@ elif [ "$ONEDOCK_DEFAULT_DOCKERRUN" != "" ]; then
 else
     DOCKERRUNCMD=
 fi
-        
+
+MEMORY_UNITY="m"
+if [ -n ${MEMORY} ]; then
+  MEMORY_STR="-m $MEMORY$MEMORY_UNITY";
+fi
+
+if [ -n ${CPU} ]; then
+    CPU_SHARE=$[ $CPU * $[ 1024 / $(cat /proc/cpuinfo | grep processor | wc -l) ] ]
+    CPU_SHARE_VALUE=$(( $CPU_SHARE > 1024 ? 1024 : $CPU_SHARE ))
+    CPU_STR="--cpu-shares=$CPU_SHARE_VALUE"
+  fi
+fi        
 # docker run --net="none" --device /dev/nbd0:/dev/hdc --device /dev/nbd0p1:/dev/hdc1 --cap-add SYS_ADMIN --security-opt apparmor:unconfined -td --name one-3 onedockvol:5000/one-3:0 
-log_onedock_debug "docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
-data=`docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
+log_onedock_debug "docker run $MEMORY_STR $CPU_STR $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
+data=`docker run $MEMORY_STR $CPU_STR $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
 
 if [ $? -eq 0 ]; then
     echo $CONTAINERNAME
