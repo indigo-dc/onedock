@@ -18,113 +18,82 @@
 
 DRIVER_PATH=$(dirname $0)
 source ${DRIVER_PATH}/../../onedock.sh
-log_onedock_debug "$0 $@"
 setup_wn
+log_onedock_debug "$0 $@"
+source ${DRIVER_PATH}/vmmfnc.sh
 
 domain=$1
 mkdir -p `dirname $domain`
 cat > $domain
+DOMXML=$(cat "$domain")
+DATASTOREFOLDER=$(dirname $domain)
 
-ONEDOCK_DEPLOYMENT_FILE=$(dirname $domain)/deployment.onedock
-read_xpath "$(cat $domain)" "/VM/ID" "/VM/NAME" "/VM/TEMPLATE/DISK/IMAGE_ID" "/VM/TEMPLATE/MEMORY" "/VM/TEMPLATE/CPU"
+ONEDOCK_NETWORK_FILE=$(dirname $domain)/deployment.network
+ONEDOCK_DEVICES_FILE=$(dirname $domain)/deployment.devices
+read_xpath "$DOMXML" "/VM/ID" "/VM/NAME" "/VM/TEMPLATE/MEMORY" "/VM/TEMPLATE/CPU"
 
 unset i
 
 VMID="${XPATH_ELEMENTS[i++]}"
 NAME="${XPATH_ELEMENTS[i++]}"
-IMAGEID="${XPATH_ELEMENTS[i++]}"
 MEMORY="${XPATH_ELEMENTS[i++]}"
 CPU="${XPATH_ELEMENTS[i++]}"
 DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
-DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "one-$VMID" "0")
+CONTAINERNAME=one-$VMID
+DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$CONTAINERNAME" "0")
 
-CREATEDEPFILE=yes
-EXISTS=$(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null)
-if [ "$EXISTS" == "false" ]; then
-    CREATEDEPFILE=no
-    data=`docker start "$NAME"`
-elif [ "$EXISTS" == "true" ]; then
-    CREATEDEPFILE=no
-    data="already running"
-else
-    cat > $ONEDOCK_DEPLOYMENT_FILE << EOF
-EOF
-    # data=`docker run --net="none" -td --name $NAME $LOCAL_SERVER/$IMAGE_BASENAME:$IMAGEID /bin/bash 2>&1`
-    ONEDOCK_DOCKERRUN=$(dirname $domain)/disk.0.dockerrun
-    if [ -e "$ONEDOCK_DOCKERRUN" ]; then
-	DOCKERRUNCMD="$(cat $ONEDOCK_DOCKERRUN)"
-    elif [ "$ONEDOCK_DEFAULT_DOCKERRUN" != "" ]; then
-	DOCKERRUNCMD="$ONEDOCK_DEFAULT_DOCKERRUN"
-    else
-	DOCKERRUNCMD=
-    fi
-
-    MEMORY_UNITY="m"
-    if [ -n ${MEMORY} ]; then
-     data_memory="-m $MEMORY$MEMORY_UNITY";
-    fi
-
-    if [ -n ${CPU} ]; then
-     data_cpu="--cpuset-cpus=$CPU";
-    fi
-   
-    data=`docker run $data_memory $data_cpu --net="none" -td --name $NAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
+EXISTS=$(docker inspect -f '{{.State.Running}}' "$CONTAINERNAME" 2>/dev/null)
+if [ "$EXISTS" == "false" ] || [ "$EXISTS" == "true" ]; then
+    error_message "name $CONTAINERNAME already taken"
+    exit -1
 fi
 
+DEVICES_STR=$(setup_devices "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_DEVICES_FILE")
+if [ $? -ne 0 ]; then
+    error_message "could not setup devices for deployment $domain"
+    exit -1
+fi
+
+NETWORK_STR=$(setup_network "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_NETWORK_FILE")
+if [ $? -ne 0 ]; then
+    error_message "could not setup network for deployment $domain"
+    exit -1
+fi
+
+ONEDOCK_DOCKERRUN=$DATASTOREFOLDER/disk.0.dockerrun
+if [ -e "$ONEDOCK_DOCKERRUN" ]; then
+    DOCKERRUNCMD="$(cat $ONEDOCK_DOCKERRUN)"
+elif [ "$ONEDOCK_DEFAULT_DOCKERRUN" != "" ]; then
+    DOCKERRUNCMD="$ONEDOCK_DEFAULT_DOCKERRUN"
+else
+    DOCKERRUNCMD=
+fi
+
+MEMORY_UNITY="m"
+if [ -n ${MEMORY} ]; then
+  MEMORY_STR="-m $MEMORY$MEMORY_UNITY";
+fi
+
+if [ -n ${CPU} ]; then
+    CPU_SHARE=$[ $CPU * $[ 1024 / $(cat /proc/cpuinfo | grep processor | wc -l) ] ]
+    CPU_SHARE_VALUE=$(( $CPU_SHARE > 1024 ? 1024 : $CPU_SHARE ))
+    CPU_STR="--cpu-shares=$CPU_SHARE_VALUE"
+  fi
+fi        
+# docker run --net="none" --device /dev/nbd0:/dev/hdc --device /dev/nbd0p1:/dev/hdc1 --cap-add SYS_ADMIN --security-opt apparmor:unconfined -td --name one-3 onedockvol:5000/one-3:0 
+log_onedock_debug "docker run $MEMORY_STR $CPU_STR $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
+data=`docker run $MEMORY_STR $CPU_STR $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
+
 if [ $? -eq 0 ]; then
-    echo $NAME
-    log_onedock_debug "$data"
-    
-    if [ "$CREATEDEPFILE" == "yes" ]; then
-        DOM=$(cat "$domain")
-        NICS="$(echo "$DOM" | xmlstarlet sel -t -m /VM/TEMPLATE/NIC -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC)" -n)"
-        for NIC in $NICS; do
-            NIC_ID=
-            BRIDGE=
-            IP=
-            MAC=
-            IFS=';' read NIC_ID BRIDGE IP MAC <<< "$NIC"
-    
-            MAC_STR=
-            IP_STR=
-            BRIDGE_STR=
-            GW_STR=
-    
-            NICNAME=eth${NIC_ID}
-            NIC_STR="--create-device $NICNAME"
-            [ "$BRIDGE" != "" ] && BRIDGE_STR="--bridge $BRIDGE"
-            [ "$MAC" != "" ] && MAC_STR="--mac $MAC"
-            if [ "$IP" != "" ]; then
-                [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && IP=$IP/$ONEDOCK_DEFAULT_NETMASK
-                IP_STR="--ip $IP"
-            fi
-            
-            # Now we get the context for the network
-            NICNAME=ETH${NIC_ID}
-            NET_CONTEXT="$(echo "$DOM" | xmlstarlet sel -t -m /VM/TEMPLATE/CONTEXT -v "concat(${NICNAME}_IP,';',${NICNAME}_MAC,';',${NICNAME}_MASK,';',${NICNAME}_NETWORK,';',${NICNAME}_GATEWAY,';',${NICNAME}_DNS)")"
-            IFS=';' read C_IP C_MAC C_MASK C_NET C_GW C_DNS <<< "$NET_CONTEXT"
-    
-            if [ "$C_IP" != "" ]; then
-                IP_STR="--ip $C_IP"
-                [ "$C_MASK" != "" ] && IP_STR="${IP_STR}/${C_MASK}"
-            else
-                # If there is no context for IP address, should we set the IP using DHCP?
-                is_true "$ONEDOCK_DEFAULT_DHCP" && IP_STR="--dhcp"
-            fi
-            
-            [ "$C_MAC" != "" ] && MAC_STR="--mac $C_MAC"
-            [ "$C_GW" != "" ] && GW_STR="--gateway $C_GW"
-            
-            echo "$SUDO $DN --container-name $NAME $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $ONEDOCK_DEPLOYMENT_FILE
-        done
-    fi
-    
+    echo $CONTAINERNAME
+
     NETCONTEXT="$(
         set -e
-        $(cat $ONEDOCK_DEPLOYMENT_FILE)
+        $(cat "$ONEDOCK_NETWORK_FILE")
     )"
     if [ $? -ne 0 ]; then
-        docker rm $(docker stop "$NAME")
+        docker rm $(docker stop "$CONTAINERNAME")
+        cleanup_disks "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_DEVICES_FILE"
         error_message "network contextualization failed: $(echo $NETCONTEXT | tr -d '\n')"
         exit 1
     fi

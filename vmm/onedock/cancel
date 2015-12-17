@@ -18,16 +18,31 @@
 
 DRIVER_PATH=$(dirname $0)
 source ${DRIVER_PATH}/../../onedock.sh
-log_onedock_debug "$0 $@"
 setup_wn
+log_onedock_debug "$0 $@"
+source ${DRIVER_PATH}/vmmfnc.sh
 
 NAME=$1
+
+CONTAINER_XML=$(docker inspect "$NAME")
+DEVICES=$(echo "$CONTAINER_XML" | jq ".[].HostConfig.Devices[].PathOnHost")
+if [ $? -eq 0 ]; then
+    for device in $DEVICES; do
+        devname=${device:1:-1}
+        if [ "${devname::8}" == "/dev/nbd" ]; then
+            log_onedock_debug "cleaning up device $devname"
+            cleanup_disk $devname > /dev/null 2> /dev/null
+        else
+            log_onedock_debug "do not how to do with device $device... skipping"
+        fi
+    done
+fi
 
 log_onedock_debug $(docker stop "$NAME" && docker rm "$NAME")
 ERR=$?
 
 # This is just to clean possible snapshots (maybe there are none)
-IMAGENAME="${NAME}:0"
-docker rmi "$IMAGENAME" > /dev/null 2> /dev/null
+DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$NAME" "0")
+docker rmi "$DISKIMAGENAME" > /dev/null 2> /dev/null
 
-exit $ERR
+exit 0

@@ -18,7 +18,6 @@
 
 DRIVER_PATH=$(dirname $0)
 source ${DRIVER_PATH}/../../onedock.sh
-log_onedock_debug "$0 $@"
 setup_wn
 
 echo VM_POLL=YES

@@ -1,0 +1,40 @@
+#!/bin/bash
+source $(dirname $0)/test-common.sh
+set -e
+
+printf "testing the creation of VM with volatile volumes "
+
+cat > /tmp/onedock.vm << EOT
+NAME = container
+CPU = 1
+MEMORY = 1024
+DISK = [ IMAGE=ubuntu ]
+DISK = [ TYPE=fs, SIZE=100,FORMAT=ext3 ]
+NIC = [ NETWORK_ID=0 ]
+CONTEXT = [ NETWORK = "YES" ]
+EOT
+
+progress
+
+create_vm /tmp/onedock.vm
+
+progress
+
+DEVICE=$(docker inspect -f '{{range .HostConfig.Devices}}{{.PathOnHost}}{{end}}' one-$VMID)
+SIZE=$(cat /sys/class/block/$(basename $DEVICE)/size)
+[ $SIZE -eq 0 ] && exit 1
+
+progress
+
+onevm delete $VMID
+
+progress
+
+wait_for 10
+
+SIZE=$(cat /sys/class/block/$(basename $DEVICE)/size)
+[ $SIZE -ne 0 ] && exit 1
+
+echo "suceeded"
+exit 0
+
