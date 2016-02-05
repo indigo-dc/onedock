@@ -42,7 +42,7 @@ function setup_disk {
     
     log_onedock_debug "connecting disk $2 in $NBD_TGT"
     log_onedock_debug "qemu-nbd -c \"$NBD_TGT\" \"${FOLDER}/disk.${DISK_ID}\""
-    sudo /usr/bin/qemu-nbd -c $NBD_TGT "${FOLDER}/disk.${DISK_ID}" 2> /dev/null
+    sudo /usr/bin/qemu-nbd -c $NBD_TGT "${FOLDER}/disk.${DISK_ID}" "--format=raw" 2> /dev/null
     if [ $? -ne 0 ]; then
         log_onedock_debug "FAILED: connecting disk $2 in $NBD_TGT"    
         echo "could not connect the disk $DISK_ID"
