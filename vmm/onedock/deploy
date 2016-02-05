@@ -92,6 +92,14 @@ if [ $? -eq 0 ]; then
         error_message "network contextualization failed: $(echo $NETCONTEXT | tr -d '\n')"
         exit 1
     fi
+
+#setup vncterm
+CONTAINERID="$(docker ps -a -q --filter=name=$CONTAINERNAME)"
+VNC_STR=$(setup_vncterm "$DOMXML" "$CONTAINERNAME" "$CONTAINERID")
+if [ $? -ne 0 ]; then
+    error_message "could not setup vncterm for deployment $domain"
+    exit 1
+fi
     exit 0
 else
     error_message "Could not create domain from $domain: $data"
