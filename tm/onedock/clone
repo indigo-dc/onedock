@@ -52,7 +52,7 @@ if [ "$PROTOCOL" == "docker://" ]; then
     IMGID=${XPATH_ELEMENTS[0]}
     read_xpath "$(oneimage show -x $IMGID)" "/IMAGE/TEMPLATE/DOCKERRUN"
     DOCKERRUN=${XPATH_ELEMENTS[0]}
-    DOCKERRUN_B64=$(base64 <<< $DOCKERRUN
+    DOCKERRUN_B64=$(base64 <<< $DOCKERRUN)
     read_xpath "$(oneimage show -x $IMGID)" "/IMAGE/TEMPLATE/DOCKERVOL"
     DOCKERVOL=${XPATH_ELEMENTS[0]}
 
