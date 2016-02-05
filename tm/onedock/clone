@@ -52,6 +52,7 @@ if [ "$PROTOCOL" == "docker://" ]; then
     IMGID=${XPATH_ELEMENTS[0]}
     read_xpath "$(oneimage show -x $IMGID)" "/IMAGE/TEMPLATE/DOCKERRUN"
     DOCKERRUN=${XPATH_ELEMENTS[0]}
+    DOCKERRUN_B64=$(base64 <<< $DOCKERRUN
     read_xpath "$(oneimage show -x $IMGID)" "/IMAGE/TEMPLATE/DOCKERVOL"
     DOCKERVOL=${XPATH_ELEMENTS[0]}
 
@@ -80,7 +81,7 @@ DOCKER_CMD="docker tag -f $DOCKER_IMG_NAME $DISKIMAGENAME"
 ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error tagging the image $DOCKER_IMG_NAME as $DISKIMAGENAME"
 if [ "$DOCKERRUN" != "" ]; then
     ssh_make_path $DST_HOST $DST_DIR
-    ssh_exec_and_log $DST_HOST "echo '$DOCKERRUN' > ${DST_PATH}.dockerrun"
+    ssh_exec_and_log $DST_HOST "echo "$DOCKERRUN_B64" | base64 -d > ${DST_PATH}.dockerrun"
 fi
 if [ "$DOCKERVOL" != "" ]; then
     ssh_make_path $DST_HOST $DST_DIR
