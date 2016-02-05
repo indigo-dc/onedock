@@ -215,7 +215,7 @@ EOT
 You need to update the file ```/etc/sudoers.d/opennebula``` to add the file that will configure the network. You need to add the line
 
 ```bash
-Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd
+Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd, /usr/bin/vncterm, /bin/systemctl
 ```
 
 And to activate this alias appending the alias in the following line
