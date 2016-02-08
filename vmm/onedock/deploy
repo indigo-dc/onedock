@@ -77,7 +77,7 @@ fi
         
 # docker run --net="none" --device /dev/nbd0:/dev/hdc --device /dev/nbd0p1:/dev/hdc1 --cap-add SYS_ADMIN --security-opt apparmor:unconfined -td --name one-3 onedockvol:5000/one-3:0 
 log_onedock_debug "docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DOCKERVOLCMD $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
-data=`docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DOCKERVOLCMD $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
+data=$(sh -c "docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DOCKERVOLCMD $DISKIMAGENAME $DOCKERRUNCMD 2>&1")
 
 if [ $? -eq 0 ]; then
     echo $CONTAINERNAME
