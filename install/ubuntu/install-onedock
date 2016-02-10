@@ -1,9 +1,10 @@
 #!/bin/bash
 apt-get install -y xmlstarlet jq git
-#cd /tmp
-#git clone https://github.com/indigo-dc/onedock
-#cd onedock
-$(dirname $0)/../setup_files.sh <<< y
+cd /tmp
+git clone https://github.com/indigo-dc/onedock
+cd onedock
+./setup_files.sh <<< y
+#$(dirname $0)/../../setup_files.sh <<< y
 cat >> /etc/one/oned.conf << EOT
 IM_MAD = [
       name       = "onedock",
