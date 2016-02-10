@@ -23,17 +23,17 @@ fi
 
 cat >> ./$NAME.install.config << EOT
 lxc.include = /var/lib/lxc/$NAME/config
-lxc.mount.entry=$PWD/.. opt/onedock none bind,create=dir 0 0
+lxc.mount.entry=$PWD/../.. opt/onedock none bind,create=dir 0 0
 EOT
 COMMANDS="lxc/install-base ubuntu/install-one ubuntu/install-docker ubuntu/install-registry ubuntu/install-onedock lxc/cleanup lxc/lxc-nbd-support"
 for CMD in $COMMANDS; do
 	lxc-start -d -n $NAME -f $NAME.install.config
 	sleep 5s
-	lxc-attach -n $NAME -- /opt/onedock/$CMD
+	lxc-attach -n $NAME -- /opt/onedock/install/$CMD
 	lxc-stop -n $NAME
 done
 lxc-start -d -n $NAME
-sleep 5s
+sleep 10s
 lxc-attach -n $NAME -- docker run -d -p 5000:5000 --restart=always --name registry -v /var/lib/docker-registry/data:/var/lib/registry -v /var/lib/docker-registry/certs:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key registry:2
 rm -f ./$NAME.install.config
 exit 0
