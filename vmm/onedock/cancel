@@ -41,6 +41,12 @@ fi
 log_onedock_debug $(docker stop "$NAME" && docker rm "$NAME")
 ERR=$?
 
+log_onedock_debug $(sudo systemctl stop vncterm-"$NAME".service)
+ERR=$?
+
+log_onedock_debug $(sudo systemctl disable vncterm-"$NAME".service)
+ERR=$?
+
 # This is just to clean possible snapshots (maybe there are none)
 DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$NAME" "0")
 docker rmi "$DISKIMAGENAME" > /dev/null 2> /dev/null

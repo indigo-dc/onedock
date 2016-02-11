@@ -66,10 +66,18 @@ elif [ "$ONEDOCK_DEFAULT_DOCKERRUN" != "" ]; then
 else
     DOCKERRUNCMD=
 fi
+
+ONEDOCK_DOCKERVOL=$DATASTOREFOLDER/disk.0.dockervol
+if [ -e "$ONEDOCK_DOCKERVOL" ]; then
+    DOCKERVOLCMD="$(cat $ONEDOCK_DOCKERVOL)"
+else
+    DOCKERVOLCMD=
+fi
+
         
 # docker run --net="none" --device /dev/nbd0:/dev/hdc --device /dev/nbd0p1:/dev/hdc1 --cap-add SYS_ADMIN --security-opt apparmor:unconfined -td --name one-3 onedockvol:5000/one-3:0 
-log_onedock_debug "docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
-data=`docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
+log_onedock_debug "docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DOCKERVOLCMD $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
+data=$(sh -c "docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DOCKERVOLCMD $DISKIMAGENAME $DOCKERRUNCMD 2>&1")
 
 if [ $? -eq 0 ]; then
     echo $CONTAINERNAME
@@ -84,6 +92,14 @@ if [ $? -eq 0 ]; then
         error_message "network contextualization failed: $(echo $NETCONTEXT | tr -d '\n')"
         exit 1
     fi
+
+#setup vncterm
+CONTAINERID="$(docker ps -a -q --filter=name=$CONTAINERNAME)"
+VNC_STR=$(setup_vncterm "$DOMXML" "$CONTAINERNAME" "$CONTAINERID")
+if [ $? -ne 0 ]; then
+    error_message "could not setup vncterm for deployment $domain"
+    exit 1
+fi
     exit 0
 else
     error_message "Could not create domain from $domain: $data"

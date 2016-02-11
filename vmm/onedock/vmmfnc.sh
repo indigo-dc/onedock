@@ -42,7 +42,7 @@ function setup_disk {
     
     log_onedock_debug "connecting disk $2 in $NBD_TGT"
     log_onedock_debug "qemu-nbd -c \"$NBD_TGT\" \"${FOLDER}/disk.${DISK_ID}\""
-    sudo /usr/bin/qemu-nbd -c $NBD_TGT "${FOLDER}/disk.${DISK_ID}" 2> /dev/null
+    sudo /usr/bin/qemu-nbd -c $NBD_TGT "${FOLDER}/disk.${DISK_ID}" "--format=raw" 2> /dev/null
     if [ $? -ne 0 ]; then
         log_onedock_debug "FAILED: connecting disk $2 in $NBD_TGT"    
         echo "could not connect the disk $DISK_ID"
@@ -168,4 +168,45 @@ EOT
     done
     echo '--net="none"'
     return 0
+}
+
+function setup_vncterm {
+    DOMXML=$1
+    CONTAINERNAME=$2
+    CONTAINERID=$3
+
+    VNC="$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/GRAPHICS -v "concat(PORT,';',PASSWD)" -n)"
+    for VNCINFO in $VNC; do
+        VNCPORT= VNCPWD=
+        IFS=';' read VNCPORT VNCPWD <<< "$VNC"
+
+        if [ "$VNCPORT" != "" ]; then
+            log_onedock_debug "Setting up vncterm listening on $VNCPORT for $CONTAINERNAME"
+(
+
+cat <<EOT
+[Unit]
+Description=VNCterm for docker container $CONTAINERNAME with ID $CONTAINERID
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/vncterm -timeout 0 -passwd $VNCPWD -rfbport $VNCPORT -c docker exec -it $CONTAINERID bash
+
+[Install]
+
+WantedBy=multi-user.target
+EOT
+
+) > /tmp/vncterm-$CONTAINERNAME.service
+
+log_onedock_debug "Enabling vncterm-$CONTAINERNAME.service"
+sudo systemctl enable /tmp/vncterm-$CONTAINERNAME.service
+log_onedock_debug "Starting vncterm-$CONTAINERNAME.service"
+sudo systemctl start vncterm-$CONTAINERNAME.service
+
+        else
+            log_onedock_debug "No GRAPHICS defined for this container: not setting up vncterm"
+            return 0
+        fi
+    done
 }
