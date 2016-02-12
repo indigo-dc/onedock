@@ -4,17 +4,17 @@ Vagrant.configure(2) do |config|
       vb.memory = "1024"
       vb.cpus = 1
     end
- 
+
    config.vm.provision "shell", inline: <<-SHELL
      sudo apt-get update
      sudo apt-get install -y git
      git clone https://github.com/indigo-dc/onedock
      cd onedock
-     sudo ./install/install-one
-     sudo ./install/install-docker
-     sudo ./install/install-registry
-     sudo ./install/launch-registry
-     sudo ./install/install-onedock
+     sudo ./install/ubuntu/install-one
+     sudo ./install/ubuntu/install-docker
+     sudo ./install/ubuntu/install-registry
+     sudo ./install/ubuntu/launch-registry
+     sudo ./install/ubuntu/install-onedock
      cat > onedock.ds << EOF
          NAME=onedock
          DS_MAD=onedock

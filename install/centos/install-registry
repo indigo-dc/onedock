@@ -12,4 +12,6 @@ $HOSTNAME
 EOT
 mkdir -p /etc/docker/certs.d/$HOSTNAME:5000/
 cp /var/lib/docker-registry/certs/domain.crt /etc/docker/certs.d/$HOSTNAME\:5000/
-cp /var/lib/docker-registry/certs/domain.crt /etc/pki/tls/certs/
+cp /var/lib/docker-registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/
+update-ca-trust extract
+service docker restart
