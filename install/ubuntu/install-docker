@@ -6,12 +6,12 @@ cat << EOT > /etc/apt/sources.list.d/docker.list
 deb https://apt.dockerproject.org/repo ubuntu-trusty main
 EOT
 apt-get -y update
-apt-get -y install docker-engine
+apt-get -y install linux-image-extra-$(uname -r) docker-engine=1.9.1-0~trusty
 cat > /etc/init.d/dockerrestart << EOT
 #!/bin/bash
 cgroups-umount
 cgroups-mount
 service docker restart
 EOT
-chmod +x /etc/init.d/dockerrestart 
+chmod +x /etc/init.d/dockerrestart
 update-rc.d dockerrestart defaults 99

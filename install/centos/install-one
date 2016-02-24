@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Install the repo
+yum install epel-release -y
+cat << EOT > /etc/yum.repos.d/opennebula.repo
+[opennebula]
+name=opennebula
+baseurl=http://downloads.opennebula.org/repo/4.14/CentOS/7/x86_64/
+enabled=1
+gpgcheck=0
+EOT
+
+# Install required packages
+yum install -y opennebula-server opennebula-node-kvm
+
+# Workaround to fix issue when accepting the packages to install
+sed -i "s/yum install/yum install -y/g" /usr/share/one/install_gems
+# Install required opennebula packages
+/usr/share/one/install_gems <<< cat << EOT
+1
+
+
+EOT
+
+# Start the services
+systemctl enable opennebula
+systemctl start opennebula
+
+# Configure SSH Public Key
+cat << EOT > /var/lib/one/.ssh/config
+Host *
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+EOT
+chmod 600 /var/lib/one/.ssh/config
+chown -R oneadmin:oneadmin /var/lib/one/.ssh
