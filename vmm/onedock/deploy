@@ -84,6 +84,14 @@ if [ $? -eq 0 ]; then
         error_message "network contextualization failed: $(echo $NETCONTEXT | tr -d '\n')"
         exit 1
     fi
+    
+    setup_vnc "$DOMXML" "$CONTAINERNAME"
+    if [ $? -eq 0 ]; then
+        log_onedock_debug "VNC set for $CONTAINERNAME"
+    else
+        log_onedock_debug "Could not set up VNC for $CONTAINERNAME... has it been defined?"
+    fi
+    
     exit 0
 else
     error_message "Could not create domain from $domain: $data"

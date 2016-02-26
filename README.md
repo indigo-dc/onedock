@@ -38,7 +38,7 @@ No. ONEDock almost fully integrates with OpenNebula, so the user can use the com
 Not actually. Different containers will have different IP addresses. All the ports are available in the IP address that ONE will assign to the container. Therefore, you do not need to deal with opening ports and all that stuff.
 
 ### Sounds like magic! What is the caveat?
-Well, ONEDock is under active development. Some open issues are the VNC console in Sunstone and others.
+Well, ONEDock is under active development. 
 
 Moreover Docker is also under very active development and, so, the integration with new versions may not work (e.g. in two weeks docker went from 1.8 to 1.9). Please tell us if you notice that problems arise with new versions.
 
@@ -165,7 +165,27 @@ Now install the required packages: jq, xmlstarlet, qemu-utils and bridge-utils.
 apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
 ```
 
-##### 3.2.1.4 Full code for impatients
+##### 3.2.1.4 VNC Support
+
+In order to have VNC support, you need to install SVNCTerm on each node. You can get it from https://github.com/dealfonso/svncterm
+
+You can follow the instructions in its readme:
+
+```bash
+apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y make build-essential zlib1g-dev console-data quilt libgnutls-dev libjpeg-dev libvncserver-dev
+git clone https://github.com/dealfonso/svncterm
+cd svncterm/
+make
+make install
+```
+
+You need to install svncterm in every virtualization node (i.e. in each node added by using the _onehost create_ command). Also in each of these nodes you need to give sudo privileges to oneadmin for command _/usr/bin/svncterm_. I.e. you need to ensure that the end _/etc/sudoers.d/opennebula_ looks like this:
+```bash
+oneadmin ALL=(ALL) NOPASSWD: ONE_MISC, ONE_NET, ONE_LVM, ONE_ISCSI, ONE_OVS, ONE_XEN, ONEDOCK
+Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd, /usr/bin/svncterm
+```
+
+##### 3.2.1.5 Full code for impatients
 
 If you are impatient, you can try the following code, which works for Ubuntu 14.04, but this step is very dependent from your installation and you should check out what are you doing:
 
@@ -215,7 +235,7 @@ EOT
 You need to update the file ```/etc/sudoers.d/opennebula``` to add the file that will configure the network. You need to add the line
 
 ```bash
-Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd
+Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd, /usr/bin/svncterm
 ```
 
 And to activate this alias appending the alias in the following line
