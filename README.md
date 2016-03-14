@@ -35,6 +35,6 @@ No. ONEDock almost fully integrates with OpenNebula, so the user can use the com
 Not actually. Different containers will have different IP addresses. All the ports are available in the IP address that ONE will assign to the container. Therefore, you do not need to deal with opening ports and all that stuff.
 
 ### Sounds like magic! What is the caveat?
-Well, ONEDock is under active development. Some open issues are the VNC console in Sunstone and others.
+Well, ONEDock is under active development. 
 
 Moreover Docker is also under very active development and, so, the integration with new versions may not work (e.g. in two weeks docker went from 1.8 to 1.9). Please tell us if you notice that problems arise with new versions.
