@@ -1,0 +1,14 @@
+#!/bin/bash
+# docker run --rm --name onedock -h onedock -v /home/calfonso/Programacion/git/onedock/devel/etc_one:/etc/one -v $PWD/one:/var/lib/one -v $PWD/..:/opt/onedock -it onedock:one /bin/bash
+CONTAINER=onedock
+IMAGENAME=oddevel:frontend
+docker inspect $CONTAINER > /dev/null 2> /dev/null
+
+if [ $? -eq 0 ]; then
+    read -p "container $CONTAINER exists. Do you want to kill it? (y/N) " REMOVE
+    [ "$REMOVE" != "y" ] && echo "aborting" && exit 1
+fi
+
+BASEDIR=$(readlink -e $(dirname $0))
+docker stop $CONTAINER && docker rm $CONTAINER
+docker run --name $CONTAINER -h $CONTAINER -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/bin/docker -v $BASEDIR/var_lib_one:/var/lib/one -v $BASEDIR/etc_one:/etc/one -v $PWD/..:/opt/onedock -id $IMAGENAME /bin/bash

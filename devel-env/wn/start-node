@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# https://github.com/grycap/docker-bootstrapper
+#
+# Copyright (C) GRyCAP - I3M - UPV 
+# Developed by Carlos A. caralla@upv.es
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# We just execute the executable scripts in the conf.d folder
+
+BASEDIR=/etc/docker-boot
+if [ -d $BASEDIR/conf.d ]; then
+    for scriptname in $BASEDIR/conf.d/*; do
+        if [ ! -d "$scriptname" -a -x "$scriptname" ]; then
+            stdbuf -oL -eL $scriptname
+            if [ $? -eq 0 ]; then
+                echo -e "Execution of $scriptname [\e[32msucceeded\e[0m]"
+            else
+                echo -e "Execution of $scriptname [\e[31mfailed\e[0m]"
+            fi
+        fi
+    done
+fi
+
+# Finally, let's get into bash in order to not to finish this script and the container is alive forever
+/bin/bash
