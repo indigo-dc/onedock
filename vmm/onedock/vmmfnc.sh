@@ -176,7 +176,11 @@ function setup_vnc {
 
     IFS=';' read VNCPORT VNCPASSWD <<< "$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/GRAPHICS -v "concat(PORT,';',PASSWD)" -n)"
     if [ "$VNCPORT" != "" ]; then
-        ( nohup bash -c "while [ \"\$(docker inspect -f '{{.State.Status}}' $CONTAINERNAME)\" == \"running\" ]; do echo 'respawning vnc term for $CONTAINERNAME'; sudo /usr/bin/svncterm -timeout 0 -passwd "$VNCPASSWD" -rfbport \"$VNCPORT\" -c docker exec -it \"$CONTAINERNAME\" /bin/bash; done > /dev/null 2> /dev/null" )&
+        if [ "$VNCPASSWD" == "" ]; then
+            ( nohup bash -c "while [ \"\$(docker inspect -f '{{.State.Status}}' $CONTAINERNAME)\" == \"running\" ]; do echo 'respawning vnc term for $CONTAINERNAME'; sudo /usr/bin/svncterm -timeout 0 -rfbport \"$VNCPORT\" -c docker exec -it \"$CONTAINERNAME\" /bin/bash; done > /dev/null 2> /dev/null" )&
+        else
+            ( nohup bash -c "while [ \"\$(docker inspect -f '{{.State.Status}}' $CONTAINERNAME)\" == \"running\" ]; do echo 'respawning vnc term for $CONTAINERNAME'; sudo /usr/bin/svncterm -timeout 0 -passwd "$VNCPASSWD" -rfbport \"$VNCPORT\" -c docker exec -it \"$CONTAINERNAME\" /bin/bash; done > /dev/null 2> /dev/null" )&
+        fi
     else
         log_onedock_debug "VNC is not defined for $CONTAINERNAME"
         return 1
