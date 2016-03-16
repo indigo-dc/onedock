@@ -1,0 +1,3 @@
+#!/bin/bash
+service opennebula start
+service opennebula-sunstone start
