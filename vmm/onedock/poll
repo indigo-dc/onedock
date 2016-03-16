@@ -41,6 +41,9 @@ function dump_container_info {
 	IFS=/ read USED_MEM MAX_MEM <<< $MEMS
 	read RUNNING PAUSED NAME<<< $INFO
 	NAME=$(echo $NAME | sed 's/^\"\/\(.*\)\"$/\1/')
+        if [ "$NAME" == "" ]; then
+            NAME=$1
+        fi
 	ID=${NAME##*-}
 	[ "$ID" == "$NAME" ] && ID=-1
 	case $RUNNING in
