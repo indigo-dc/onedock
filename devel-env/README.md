@@ -26,7 +26,7 @@ $ sudo ./setupenv
 4. Create a front-end
 
 ```bash
-$ docker run --name $CONTAINER -h $CONTAINER -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/bin/docker -v $BASEDIR/var_lib_one:/var/lib/one -v $BASEDIR/etc_one:/etc/one -v $PWD/..:/opt/onedock -id $IMAGENAME /bin/bash
+$ ./startfrontend
 ```
 
 5. Create a working node
