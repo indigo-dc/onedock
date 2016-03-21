@@ -1,5 +1,4 @@
 #!/bin/bash
-# docker run --rm --name onedock -h onedock -v /home/calfonso/Programacion/git/onedock/devel/etc_one:/etc/one -v $PWD/one:/var/lib/one -v $PWD/..:/opt/onedock -it onedock:one /bin/bash
 CONTAINER=onedock
 IMAGENAME=oddevel:frontend
 docker inspect $CONTAINER > /dev/null 2> /dev/null
