@@ -88,7 +88,9 @@ log_onedock_debug "image $DOCKER_IMG_NAME tagged as $DISKIMAGENAME"
 if [ "$LOCAL_SERVER" == "" ]; then
         log_onedock_debug "WARNING: LOCAL_SERVER is not set: Assuming shared repository!!! (feature created for developers): not deleting the image"
 else
-    DOCKER_CMD="docker rmi $DOCKER_IMG_NAME"
-    ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error removing image $DOCKER_IMG_NAME"
+    if [ "$DELETE_LOCAL_IMAGES" == "yes" ]; then
+        DOCKER_CMD="docker rmi $DOCKER_IMG_NAME"
+        ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" "Error removing image $DOCKER_IMG_NAME"
+    fi
 fi
 exit 0
