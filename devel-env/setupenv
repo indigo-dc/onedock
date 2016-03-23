@@ -48,6 +48,7 @@ cp ../onedock.conf ./var_lib_one/remotes/
 cp ../onedock.sh ./var_lib_one/remotes/
 
 echo "export LOCAL_SERVER=" >> ./var_lib_one/remotes/onedock.conf
+echo "export DATASTORE_DATA_PATH=" >> ./var_lib_one/remotes/onedock.conf
 
 chown -R oneadmin:oneadmin var_lib_one etc_one var_tmp_one
 
