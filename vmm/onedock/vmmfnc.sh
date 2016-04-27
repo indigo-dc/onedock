@@ -238,7 +238,7 @@ EOT
         
         echo "$SUDO $DN --container-name $CONTAINERNAME $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $NETWORKFILE
     done
-    echo '--net="none"'
+    echo "--net=\"none\" -h $CONTAINERNAME --add-host $CONTAINERNAME:127.0.1.1"
     return 0
 }
 
