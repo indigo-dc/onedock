@@ -32,7 +32,8 @@ function setup_disk {
     FOLDER=$1
     DISK_ID=$2
     TARGET=$3
-    DEVICESFILE=$4
+    DEVICES_FILE=$4
+    CLEANUP_FILE=$5
     
     NBD_TGT=$(find_nbd)
     if [ "$NBD_TGT" == "" ]; then
@@ -44,12 +45,21 @@ function setup_disk {
     log_onedock_debug "qemu-nbd -c \"$NBD_TGT\" \"${FOLDER}/disk.${DISK_ID}\""
     sudo /usr/bin/qemu-nbd -c $NBD_TGT "${FOLDER}/disk.${DISK_ID}" 2> /dev/null
     if [ $? -ne 0 ]; then
-        log_onedock_debug "FAILED: connecting disk $2 in $NBD_TGT"    
+        log_onedock_debug "FAILED: connecting disk $DISK_ID in $NBD_TGT"    
         echo "could not connect the disk $DISK_ID"
         return 2
     fi
     
-    echo "$NBD_TGT" >> "$DEVICESFILE"
+    cat >> "$CLEANUP_FILE" << EOT
+sudo /usr/bin/qemu-nbd -d $NBD_TGT
+EOT
+    cat >> "$BOOTSTRAP_FILE" << EOT
+        L_STRING=\$(udevadm test \$(readlink -f /sys/block/${TARGET}) 2> /dev/null | grep DEVLINKS)
+        L_STRING=\${L_STRING:9}
+        for L in \$L_STRING; do mkdir -p \$(dirname "\$L") && ln -s /dev/${TARGET} \$L; done
+EOT
+    
+    echo "$NBD_TGT" >> "$DEVICES_FILE"
     EXPORTED_DEVICES="--device $NBD_TGT:/dev/$TARGET"
     DEVNAME=$(basename $NBD_TGT)
     PARTITIONS=$(ls -d /sys/class/block/${DEVNAME}/${DEVNAME}p* 2> /dev/null)
@@ -58,6 +68,11 @@ function setup_disk {
             PARTITION_NAME=$(basename $partition)
             PARTITION_ID=${PARTITION_NAME##${DEVNAME}p}
             EXPORTED_DEVICES="${EXPORTED_DEVICES} --device ${NBD_TGT}p${PARTITION_ID}:/dev/${TARGET}${PARTITION_ID}"
+            cat >> "$BOOTSTRAP_FILE" << EOT
+        L_STRING=\$(udevadm test \$(readlink -f /sys/block/${TARGET}/${TARGET}${PARTITION_ID}) 2> /dev/null | grep DEVLINKS)
+        L_STRING=\${L_STRING:9}
+        for L in \$L_STRING; do mkdir -p \$(dirname "\$L") && ln -s /dev/${TARGET}${PARTITION_ID} \$L; done
+EOT
         done
     fi
     echo $EXPORTED_DEVICES
@@ -73,9 +88,9 @@ function cleanup_disk {
 function cleanup_disks {
     DOMXML=$1
     FOLDER=$2
-    DEVICESFILE=$3
+    DEVICES_FILE=$3
     
-    for device in $(cat $DEVICESFILE); do
+    for device in $(cat $DEVICES_FILE); do
         cleanup_disk "$device"
     done
     return 0
@@ -84,9 +99,11 @@ function cleanup_disks {
 function setup_devices {
     DOMXML=$1
     FOLDER=$2
-    DEVICESFILE=$3
-
-    cat <<EOT > $DEVICESFILE
+    DEVICES_FILE=$3
+    CLEANUP_FILE=$4
+    BOOTSTRAP_FILE=$5
+    
+    cat <<EOT > $DEVICES_FILE
 EOT
     DEVICES_STR=
     DISKS="$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/DISK -v "concat(DISK_ID,';',TARGET,';',TYPE)" -n)"
@@ -97,28 +114,81 @@ EOT
         # We'll skip disk 0, because it is the docker image        
         [ "$DISK_ID" == "0" ] && continue
 
+        RESULT=0
         if [ "$TYPE" == "fs" ] || [ "$TYPE" == "FILE" ]; then
-            log_onedock_debug "setup_disk $FOLDER $DISK_ID $TARGET $DEVICESFILE"
-            CURRENT_DEVICE_STR=$(setup_disk "$FOLDER" "$DISK_ID" "$TARGET" "$DEVICESFILE")
-            if [ $? -ne 0 ]; then
-                log_onedock_debug "FAILED: could not setup disk $DISK_ID ($CURRENT_DEVICE_STR)"    
-                error_message "could not setup disk $DISK_ID ($CURRENT_DEVICE_STR)"
-                cleanup_disks "$DOMXML" "$FOLDER" "$DEVICESFILE"
-                return 2
-            fi
-            DEVICES_STR="$DEVICES_STR$CURRENT_DEVICE_STR "
+            log_onedock_debug "setup_disk $FOLDER $DISK_ID $TARGET $DEVICES_FILE $CLEANUP_FILE" "$BOOTSTRAP_FILE"
+            CURRENT_DEVICE_STR=$(setup_disk "$FOLDER" "$DISK_ID" "$TARGET" "$DEVICES_FILE" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
+            RESULT=$?
+        elif [ "$TYPE" == "CDROM" ]; then
+            log_onedock_debug "setup_cd ${FOLDER}/disk.${DISK_ID} $TARGET $CLEANUP_FILE $BOOTSTRAP_FILE"
+            CURRENT_DEVICE_STR=$(setup_cd "${FOLDER}/disk.${DISK_ID}" "$TARGET" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
+            RESULT=$?
         else
             log_onedock_debug "FAILED: wrong type for disk $DISK_ID"    
-            error_message "we only support disks of type 'fs' and 'FILE'... type '$TYPE' found"
+            error_message "we only support disks of type 'fs', 'FILE' and 'CDROM'... type '$TYPE' found"
             return 1
         fi
+        
+        if [ $RESULT -ne 0 ]; then
+            log_onedock_debug "FAILED: could not setup disk $DISK_ID ($CURRENT_DEVICE_STR)"    
+            error_message "could not setup disk $DISK_ID ($CURRENT_DEVICE_STR)"
+            # This can be removed because cleaning up is now an integrated procedure
+            # cleanup_disks "$DOMXML" "$FOLDER" "$DEVICES_FILE"
+            return 2
+        fi
+        DEVICES_STR="$DEVICES_STR$CURRENT_DEVICE_STR "
     done
-    
-    if [ "$DEVICES_STR" != "" ]; then
-        DEVICES_STR="$DEVICES_STR --cap-add SYS_ADMIN --security-opt apparmor:unconfined"
-    fi
-    
+        
     echo $DEVICES_STR
+    return 0
+}
+
+function setup_cd {
+    ISOFILE=$1
+    TARGET=$2
+    CLEANUP_FILE=$3
+    BOOTSTRAP_FILE=$4
+    
+    ISOFILE=$(readlink -f $ISOFILE)
+    
+    LOOP_DEVICE=$(sudo losetup -f --show "$ISOFILE" 2>&1)
+    if [ $? -ne 0 ]; then
+        log_onedock_debug "FAILED: to setup loop device for iso file $ISOFILE"
+        error_message "failed to setup loop device for iso file $ISOFILE ($LOOP_DEVICE)"
+        return 1
+    else
+        echo "--device ${LOOP_DEVICE}:/dev/${TARGET}"
+        cat >> "$CLEANUP_FILE" << EOT
+sudo losetup -d $LOOP_DEVICE
+EOT
+        cat >> "$BOOTSTRAP_FILE" << EOT
+        L_STRING=\$(udevadm test \$(readlink -f /sys/block/${TARGET}) 2> /dev/null | grep DEVLINKS)
+        L_STRING=\${L_STRING:9}
+        for L in \$L_STRING; do mkdir -p \$(dirname "\$L") && ln -s /dev/${TARGET} \$L; done
+EOT
+    fi
+}
+
+function setup_context {
+    DOMXML=$1
+    FOLDER=$2
+    CONTEXT_FILE=$3
+    CLEANUP_FILE=$4
+    BOOTSTRAP_FILE=$5
+
+    CONTEXT_STR=
+    CONTEXT_DISK="$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/CONTEXT -v "concat(DISK_ID,';',TARGET)" -n)"
+    DISK_ID= TARGET=
+    IFS=';' read DISK_ID TARGET <<< "$CONTEXT_DISK"
+
+    if [ "$DISK_ID" != "" ]; then
+        log_onedock_debug "setup_cd ${FOLDER}/disk.${DISK_ID} $TARGET $CLEANUP_FILE $BOOTSTRAP_FILE"
+        CONTEXT_STR=$(setup_cd "${FOLDER}/disk.${DISK_ID}" "$TARGET" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+    fi
+    echo "$CONTEXT_STR"
     return 0
 }
 
@@ -126,6 +196,8 @@ function setup_network {
     DOMXML=$1
     FOLDER=$2
     NETWORKFILE=$3
+    CLEANUP_FILE=$4
+    BOOTSTRAP_FILE=$5
     
     cat <<EOT > $NETWORKFILE
 EOT
@@ -185,5 +257,24 @@ function setup_vnc {
         log_onedock_debug "VNC is not defined for $CONTAINERNAME"
         return 1
     fi
+    return 0
+}
+
+function exec_file {
+    RESULT="$(
+        $(cat "$1")
+    ) 2>&1"
+    RETVAL=$?
+    
+    if [ $RETVAL -ne 0 ]; then
+        if [ "$2" != "" ]; then
+            error_message "$2"
+        else
+            error_message "Failed execute file $1 ($RESULT)"
+        fi
+        return 1
+    fi
+        
+    echo "$RESULT"
     return 0
 }

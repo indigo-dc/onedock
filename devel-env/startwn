@@ -14,6 +14,6 @@ fi
 BASEDIR=$(readlink -e $(dirname $0))
 
 
-docker run --name $WNNAME -h $WNNAME -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/bin/docker -v $BASEDIR/var_lib_one:/var/lib/one -v $BASEDIR/var_tmp_one:/var/tmp/one -id $IMAGENAME /bin/bash
+docker run --privileged --name $WNNAME -h $WNNAME -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/bin/docker -v $BASEDIR/var_lib_one:/var/lib/one -v $BASEDIR/var_tmp_one:/var/tmp/one -id $IMAGENAME /bin/bash
 IP=$(docker inspect -f '{{.NetworkSettings.IPAddress}}' $WNNAME)
 docker exec $FRONTENDNAME bash -c "cat /etc/hosts | sed \"/$IP/d;/$WNNAME/d\" > /tmp/hosts && echo \"$IP $WNNAME\" >> /tmp/hosts && cp /tmp/hosts /etc/"

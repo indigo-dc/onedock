@@ -30,6 +30,8 @@ DATASTOREFOLDER=$(dirname $domain)
 
 ONEDOCK_NETWORK_FILE=$(dirname $domain)/deployment.network
 ONEDOCK_DEVICES_FILE=$(dirname $domain)/deployment.devices
+ONEDOCK_CONTEXT_FILE=$(dirname $domain)/deployment.context
+
 read_xpath "$DOMXML" "/VM/ID" "/VM/NAME"
 
 unset i
@@ -40,20 +42,42 @@ DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
 CONTAINERNAME=one-$VMID
 DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$CONTAINERNAME" "0")
 
+ONEDOCK_CONTAINER_FOLDER=${ONEDOCK_FOLDER}/${CONTAINERNAME}
+mkdir -p "$ONEDOCK_CONTAINER_FOLDER"
+ONEDOCK_CLEANUP_FILE="$ONEDOCK_CONTAINER_FOLDER/deployment.cleanup"
+cat > ${ONEDOCK_CLEANUP_FILE} << EOT
+EOT
+ONEDOCK_BOOTSTRAP_FILE="$ONEDOCK_CONTAINER_FOLDER/deployment.bootstrap"
+cat > ${ONEDOCK_BOOTSTRAP_FILE} << EOT
+EOT
+
 EXISTS=$(docker inspect -f '{{.State.Running}}' "$CONTAINERNAME" 2>/dev/null)
 if [ "$EXISTS" == "false" ] || [ "$EXISTS" == "true" ]; then
     error_message "name $CONTAINERNAME already taken"
     exit -1
 fi
 
-DEVICES_STR=$(setup_devices "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_DEVICES_FILE")
+DEVICES_STR=$(setup_devices "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_DEVICES_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
 if [ $? -ne 0 ]; then
+    exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "could not setup devices for deployment $domain"
     exit -1
 fi
 
-NETWORK_STR=$(setup_network "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_NETWORK_FILE")
+CONTEXT_STR=$(setup_context "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_CONTEXT_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
 if [ $? -ne 0 ]; then
+    exec_file "$ONEDOCK_CLEANUP_FILE"
+    error_message "could not setup context for deployment $domain"
+    exit -1
+fi
+
+if [ "$DEVICES_STR" != "" -o "$CONTEXT_STR" != "" ]; then
+    DEVICES_STR="$DEVICES_STR --cap-add SYS_ADMIN --security-opt apparmor:unconfined"
+fi
+
+NETWORK_STR=$(setup_network "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_NETWORK_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
+if [ $? -ne 0 ]; then
+    exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "could not setup network for deployment $domain"
     exit -1
 fi
@@ -67,9 +91,8 @@ else
     DOCKERRUNCMD=
 fi
         
-# docker run --net="none" --device /dev/nbd0:/dev/hdc --device /dev/nbd0p1:/dev/hdc1 --cap-add SYS_ADMIN --security-opt apparmor:unconfined -td --name one-3 onedockvol:5000/one-3:0 
-log_onedock_debug "docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
-data=`docker run $NETWORK_STR $DEVICES_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
+log_onedock_debug "docker run $NETWORK_STR $DEVICES_STR $CONTEXT_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
+data=`docker run $NETWORK_STR $DEVICES_STR $CONTEXT_STR -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
 
 if [ $? -eq 0 ]; then
     echo $CONTAINERNAME
@@ -80,7 +103,8 @@ if [ $? -eq 0 ]; then
     )"
     if [ $? -ne 0 ]; then
         docker rm $(docker stop "$CONTAINERNAME")
-        cleanup_disks "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_DEVICES_FILE"
+        # cleanup_disks "$DOMXML" "$DATASTOREFOLDER" "$ONEDOCK_DEVICES_FILE"
+        exec_file "$ONEDOCK_CLEANUP_FILE"
         error_message "network contextualization failed: $(echo $NETCONTEXT | tr -d '\n')"
         exit 1
     fi
@@ -88,12 +112,16 @@ if [ $? -eq 0 ]; then
     setup_vnc "$DOMXML" "$CONTAINERNAME"
     if [ $? -eq 0 ]; then
         log_onedock_debug "VNC set for $CONTAINERNAME"
-    else
-        log_onedock_debug "Could not set up VNC for $CONTAINERNAME... has it been defined?"
     fi
     
+    # Now we execute the bootstrapping content
+    RESULT_STR=$(docker exec "$CONTAINERNAME" bash -c "$(cat $ONEDOCK_BOOTSTRAP_FILE)" 2>&1)
+    if [ $? -ne 0 ]; then
+        error_message "$RESULT_STR"
+    fi
     exit 0
 else
+    exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "Could not create domain from $domain: $data"
     exit -1
 fi
