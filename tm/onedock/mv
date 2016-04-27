@@ -21,5 +21,6 @@ source ${DRIVER_PATH}/../../onedock.sh
 log_onedock_debug "$0 $@"
 setup_frontend
 
-log_onedock_debug "moving files is not implemented, yet (assuming shared folders)"
+log_onedock_debug "moving files is not implemented, yet
+    \(assuming shared folders)"
 exit 0

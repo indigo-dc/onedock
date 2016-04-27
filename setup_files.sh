@@ -23,7 +23,8 @@ if [ "$OVERWRITE" != "Y" ]; then
 exit
 fi
 
-FOLDERS="im/onedock.d im/onedock-probes.d vmm/onedock tm/onedock datastore/onedock"
+FOLDERS="im/onedock.d im/onedock-probes.d vmm/onedock\
+    tm/onedock datastore/onedock"
 for F in $FOLDERS; do
     if [ ! -d "/var/lib/one/remotes/$F" ]; then
         cp -r "$BASEDIR/$F" /var/lib/one/remotes/$(dirname $F)
@@ -31,7 +32,7 @@ for F in $FOLDERS; do
         cp $BASEDIR/$F/* "/var/lib/one/remotes/$F/"
     fi
 done
-        
+
 cp $BASEDIR/onedock.sh /var/lib/one/remotes/
 cp $BASEDIR/docker-manage-network /var/lib/one/remotes/
 
@@ -63,7 +64,8 @@ export ONEDOCK_DEFAULT_NETMASK=24
 export ONEDOCK_DEFAULT_DHCP=yes
 EOF
 else
-echo "Configuration file /var/lib/one/remotes/onedock.conf exists. Please check that the variables are properly set."
+echo "Configuration file /var/lib/one/remotes/onedock.conf exists.\
+    Please check that the variables are properly set."
 fi
 touch /var/log/onedock.log && chown oneadmin:oneadmin /var/log/onedock.log
 chown -R oneadmin:oneadmin /var/lib/one/remotes

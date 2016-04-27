@@ -46,30 +46,30 @@ CLIENT=$DIR/${BASENAME}.rb
 CLIENT_PID_FILE=/tmp/one-collectd-client.pid
 
 # Launch the client
-function start_client() {
+function start_client {
     nohup /usr/bin/env ruby $CLIENT $ARGV >/dev/null 2>&1 &
 }
 
-function stop_client() {
+function stop_client {
     PID=$(get_pid)
     kill $PID
 }
 
-function remove_pid_file() {
+function remove_pid_file {
     rm -f $CLIENT_PID_FILE
 }
 
 # Write the PID
-function write_pid() {
+function write_pid {
     echo $1 > $CLIENT_PID_FILE
 }
 
-function get_pid() {
+function get_pid {
     cat $CLIENT_PID_FILE
 }
 
 # Check if running process
-function check_running() {
+function check_running {
     # Assume the process is not running if there is no pid file
     test ! -f $CLIENT_PID_FILE && return 1
 

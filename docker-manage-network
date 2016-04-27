@@ -18,33 +18,40 @@
 # limitations under the License.
 #
 
+
 LOGFILE=/dev/stderr
+
 
 # Enabling the exit of the script
 set -u
 trap "exit 1" TERM
 export SCRIPTPID=$$
 
+
 # Logging functions
 function log {
     if [ "$LOGFILE" == "/dev/stderr" ]; then
-        echo -e "$(date -R) $2 - $3" >&2 
+        echo -e "$(date -R) $2 - $3" >&2
     else
         echo -e "$(date -R) $2 - $3" >> "$1"
     fi
 }
 
+
 function log_error {
     log $LOGFILE "[ERROR]" "$1"
 }
+
 
 function log_debug {
     log $LOGFILE "[DEBUG]" "$1"
 }
 
+
 function log_info {
     log $LOGFILE "[INFO]" "$1"
 }
+
 
 function finalize {
     # 
@@ -57,6 +64,7 @@ function finalize {
     exit
 }
 
+
 function is_true {
     V=$(echo $1 | tr '[a-z]' '[A-Z]')
     [ "$V" == "TRUE" ] && return 0
@@ -64,6 +72,7 @@ function is_true {
     [ "$V" == "YES" ] && return 0
     return 1
 }
+
 
 function setup_bridge {
     # 
@@ -75,7 +84,8 @@ function setup_bridge {
     CHECKSTR=$(brctl show | grep "$BRNAME")
     if [ "$CHECKSTR" == "" ]; then
         brctl addbr "$BRNAME"
-        
+
+
         if [ $? -ne 0 ]; then
             finalize "could not create bridge $BRNAME"
         else
@@ -86,6 +96,7 @@ function setup_bridge {
     fi
     ip link set "$BRNAME" up
 }
+
 
 function check_bridge {
     # 
@@ -102,29 +113,35 @@ function check_bridge {
     fi
 }
 
+
 function build_ns {
     # 
     # @Syntax: build_ns $1
     #
     # Finds the network namespace for container with id (or name) in $1. It sets up the links to enable to manage the namespace using ip netns commands
     #
-    
+
+
     local DOCKID=$1
     local NSDOCK=
     PID=$(docker inspect -f '{{.State.Pid}}' $DOCKID)
-    
+
+
     if [ $? -ne 0 ] || [ $PID -eq 0 ]; then
-	echo "could not find container $DOCKID"
+        echo "could not find container $DOCKID"
         finalize "could not find container $DOCKID"
     fi
-    
+
+
     NSDOCK=ns-$PID
     mkdir -p /var/run/netns
     rm -f /var/run/netns/$NSDOCK 2> /dev/null
     ln -s /proc/$PID/ns/net /var/run/netns/$NSDOCK
-    
+
+
     echo $NSDOCK
 }
+
 
 function cleanup_ns {
     # 
@@ -132,9 +149,11 @@ function cleanup_ns {
     #
     # Removes the links that correspond to the container with id (or name) in $1
     #
-    local NSDOCK=$(build_ns $1)
+    local NSDOCK
+    NSDOCK=$(build_ns $1)
     rm -f /var/run/netns/$NSDOCK 2> /dev/null
 }
+
 
 function create_device {
     # 
@@ -143,12 +162,15 @@ function create_device {
     # This function creates a network device named $3 for container with id (or name) $1, and connects it to the bridge $2, thus enabling direct communication between the host and the containers attached to the bridge.
     #
 
+
     DOCKID=$1
     BRNAME=$2
     DEVNAME=$3
-    
+
+
     NSDOCK=$(build_ns $DOCKID)
-    
+
+
     set -e
     VETH0=v${DEVNAME}${NSDOCK}-0
     VETH1=v${DEVNAME}${NSDOCK}-1
@@ -159,8 +181,10 @@ function create_device {
     ip netns exec $NSDOCK ip link set dev $VETH1 name $DEVNAME
     ip netns exec $NSDOCK ip link set dev $DEVNAME up
     set +e
-    log_debug "device $DEVNAME created in container $DOCKID and attached to bridge $BRNAME"
+    log_debug "device $DEVNAME created in container $DOCKID\
+        and attached to bridge $BRNAME"
 }
+
 
 function delete_device {
     # 
@@ -170,13 +194,15 @@ function delete_device {
     #
     DOCKID=$1
     DEVNAME=$2
-    
+
+
     NSDOCK=$(build_ns $DOCKID)
     set -e
     ip netns exec $NSDOCK ip link delete dev $DEVNAME
     set +e
     log_debug "device $DEVNAME deleted from container $DOCKID"
 }
+
 
 function assign_ip {
     # 
@@ -185,16 +211,19 @@ function assign_ip {
     # This function assigns the ip in $3 to the device $2 in the container $1
     #
 
+
     DOCKID=$1
     DEVNAME=$2
     IPADDR=$3
-    
+
+
     NSDOCK=$(build_ns $DOCKID)
     set -e
     ip netns exec $NSDOCK ip addr add dev $DEVNAME $IPADDR
     set +e
     log_debug "ip $IPADDR assigned to device $DEVNAME in container $DOCKID"
 }
+
 
 function assign_mac {
     # 
@@ -203,16 +232,19 @@ function assign_mac {
     # This function assigns the mac address in $3 to the device $2 in the container $1
     #
 
+
     DOCKID=$1
     DEVNAME=$2
     MACADDR=$3
-    
+
+
     NSDOCK=$(build_ns $DOCKID)
     set -e
     ip netns exec $NSDOCK ip link set dev $DEVNAME address $MACADDR
     set +e
     log_debug "MAC $MACADDR assigned to device $DEVNAME in container $DOCKID"
 }
+
 
 function assign_gw {
     # 
@@ -221,16 +253,19 @@ function assign_gw {
     # This function assigns the default router $3 device $2 in the container $1
     #
 
+
     DOCKID=$1
     DEVNAME=$2
     GW=$3
-    
+
+
     NSDOCK=$(build_ns $DOCKID)
     set -e
     ip netns exec $NSDOCK ip route add dev $DEVNAME default via $GW
     set +e
     log_debug "gateway $GW set as default for $DEVNAME in container $DOCKID"
 }
+
 
 function get_ip_dhcp {
     # 
@@ -240,12 +275,14 @@ function get_ip_dhcp {
     #   * NOTE: the current parameters for the dhcp client are only tested for dhclient.
     #
 
+
     DOCKID=$1
     DEVNAME=$2
     set +u
     DHCP=$3
     [ "$DHCP" == "" ] && DHCP=dhclient
     set -u
+
 
     NSDOCK=$(build_ns $DOCKID)
     set -e
@@ -254,7 +291,8 @@ function get_ip_dhcp {
     log_debug "dhcp client launched for device $DEVNAME in container $DOCKID"
 }
 
-function read_param() {
+
+function read_param {
     # 
     # @Syntax: read_param $1 $@
     #
@@ -262,15 +300,16 @@ function read_param() {
     #
     varname=$1
     if [ $# -gt 2 ]; then
-            eval "$varname"=$3
-            return 0
+        eval "$varname"=$3
+        return 0
     else
-            echo "$2 needs an extra parameter"
-            return 1
+        echo "$2 needs an extra parameter"
+        return 1
     fi
 }
 
-function exit_on_error() {
+
+function exit_on_error {
     # 
     # @Syntax: exit_on_error
     #
@@ -281,45 +320,60 @@ function exit_on_error() {
     fi
 }
 
+
 function get_last_device {
     DOCKID=$1
-    
+
+
     NSDOCK=$(build_ns $DOCKID)
-    LASTID=$(ip netns exec $NSDOCK ip -o link | grep -G 'eth[0-9]*:' | awk -F ':' '{print $2}' | tr -d ' ' | sed 's/eth//g' | sort -n | tail -n 1)
+    LASTID=$(ip netns exec $NSDOCK ip -o link |\
+        grep -G 'eth[0-9]*:' | awk -F ':' '{print $2}' |\
+            tr -d ' ' | sed 's/eth//g' | sort -n | tail -n 1)
     if [ $? -ne 0 ] || [ "$(echo $LASTID | tr -d '[0-9]')" != "" ]; then
-        finalize "could not get the last valid device for container $CONTAINERNAME"
+        finalize "could not get the last valid device for\
+            container $CONTAINERNAME"
     fi
     echo $LASTID
 }
+
 
 function filter_interfaces {
     DOCKID=$1
     MAC=$2
     IP=$3
-    
+
+
     NSDOCK=$(build_ns $DOCKID)
     MACLIST=$(ip netns exec $NSDOCK ip -o link)
     IPLIST=$(ip netns exec $NSDOCK ip -o addr)
-    
+
+
     [ "$IP" != "" ] && IPLIST=$(echo "$IPLIST" | grep "$IP")
     [ "$MAC" != "" ] && MACLIST=$(echo "$MACLIST" | grep "$MAC")
-    
+
+
     IP_IFACES=$(echo "$IPLIST" | awk -F ' ' '{print $2}' | tr -d ' ')
     MAC_IFACES=$(echo "$MACLIST" | awk -F ':' '{print $2}' | tr -d ' ')
+
 
     COMMON=
     for C_IP in $IP_IFACES; do
         if [ "$(echo $MAC_IFACES | grep $C_IP)" != "" ]; then
-           COMMON="$COMMON$C_IP "
+            COMMON="$COMMON$C_IP "
         fi
     done
 
+
     for C_IFACE in $COMMON; do
-        C_MAC=$(echo "$MACLIST" | grep $C_IFACE | sed 's/^.*\(\([0-9a-f]\{2\}:\)\{5\}[0-9a-f][0-9a-f]\) .*$/\1/')
-        C_IP=$(echo "$IPLIST" | grep $C_IFACE | sed 's/.*\(inet[6]\{0,1\} [^ ]*\).*/\1/' | awk '{print $2}' | head -n 1)
+        C_MAC=$(echo "$MACLIST" | grep $C_IFACE |\
+            sed 's/^.*\(\([0-9a-f]\{2\}:\)\{5\}[0-9a-f][0-9a-f]\) .*$/\1/')
+        C_IP=$(echo "$IPLIST" | grep $C_IFACE |\
+            sed 's/.*\(inet[6]\{0,1\} [^ ]*\).*/\1/' |\
+            awk '{print $2}' | head -n 1)
         echo "$C_IFACE $C_MAC $C_IP"
     done
 }
+
 
 # BRIDGENAME=br1
 BRIDGENAME=
@@ -331,6 +385,7 @@ DHCP=no
 CLEAN_NAMESPACES=no
 GW=
 
+
 CREATE=False
 UPDATE=False
 DELETE=False
@@ -338,80 +393,94 @@ APPEND=False
 INFO=False
 OP=0
 
+
 function usage {
-    echo "$0 [--container-name <container name>] [--create-device <device> ] [--bridge <bridge>] [--update-device <device>] [--delete-device <device>] [--mac <mac address>] [--ip <ip address>] [--dhcp] [--gateway <gateway>]"
+    echo "$0 [--container-name <container name>] [--create-device <device> ]\
+        [--bridge <bridge>] [--update-device <device>]\
+        [--delete-device <device>] [--mac <mac address>]\
+        [--ip <ip address>] [--dhcp] [--gateway <gateway>]"
     finalize ""
 }
+
 
 while [ $# -gt 0 ]; do
     case $1 in
     --container-name|-n)    read_param CONTAINERNAME $@
-                            exit_on_error "missing parameter for --container-name"
-                            shift;;
+                        exit_on_error "missing parameter for --container-name"
+                        shift;;
     --append-device|-a)     APPEND=True
-                            OP=$[ $OP + 1 ];;
+                        OP=$(( $OP + 1 ));;
     --get-info|-g)          INFO=True
-                            OP=$[ $OP + 1 ];;
+                        OP=$(( $OP + 1 ));;
     --create-device|-c)	    read_param DEVICENAME $@
-                            exit_on_error "missing parameter for --create-device"
-                            CREATE=True
-                            OP=$[ $OP + 1 ]
-                            shift;;
+                        exit_on_error "missing parameter for --create-device"
+                        CREATE=True
+                        OP=$(( $OP + 1 ))
+                        shift;;
     --update-device|-u)	    read_param DEVICENAME $@
-                            exit_on_error "missing parameter for --update-device"
-                            UPDATE=True
-                            OP=$[ $OP + 1 ]
-                            shift;;
+                        exit_on_error "missing parameter for --update-device"
+                        UPDATE=True
+                        OP=$(( $OP + 1 ))
+                        shift;;
     --delete-device|-d)	    read_param DEVICENAME $@
-                            exit_on_error "missing parameter for --delete-device"
-                            DELETE=True
-                            OP=$[ $OP + 1 ]
-                            shift;;
+                        exit_on_error "missing parameter for --delete-device"
+                        DELETE=True
+                        OP=$(( $OP + 1 ))
+                        shift;;
     --bridge|-b)            read_param BRIDGENAME $@
-                            exit_on_error "missing parameter for --bridge"
-                            shift;;
+                        exit_on_error "missing parameter for --bridge"
+                        shift;;
     --mac|-m)               read_param MACADDR $@
-                            exit_on_error "missing parameter for --mac"
-                            shift;;
+                        exit_on_error "missing parameter for --mac"
+                        shift;;
     --ip|-i)                read_param IPADDR $@
-                            exit_on_error "missing paramter for --ip"
-                            shift;;
+                        exit_on_error "missing paramter for --ip"
+                        shift;;
     --dhcp)                 DHCP=yes;;
     --gateway|-g)           read_param GW $@
-                            exit_on_error "missing parameter for --gateway"
-                            shift;;
+                        exit_on_error "missing parameter for --gateway"
+                        shift;;
     --help|-h)              usage;;
     --cleanup-namespaces)   CLEAN_NAMESPACES=yes
-                            shift;;
+                        shift;;
     *)                      finalize "unexpected parameter $1";;
     esac
     shift
 done
 
+
 if [ "$CONTAINERNAME" == "" ]; then
-    finalize "please state the container with wich you want to operate using --container-name (-n) flag"
+    finalize "please state the container with wich you want to operate\
+        using --container-name (-n) flag"
 fi
+
 
 if [ "$IPADDR" != "" ] && [ "$DHCP" == "yes" ]; then
     finalize "trying to get ip using dhcp while ip address stated"
 fi
 
+
 [ $OP -ne 1 ] && finalize "please state an operation to perform"
 [ $OP -gt 1 ] && finalize "please state ONLY ONE operation to perform"
 
+
 if is_true $APPEND; then
     ID=$(get_last_device $CONTAINERNAME)
-    ID=$[ $ID + 1 ]
+    ID=$(( $ID + 1 ))
     CREATE=True
     DEVICENAME=eth$ID
 fi
 
+
 ID=$CONTAINERNAME
 if is_true $CREATE; then
-    [ "$BRIDGENAME" == "" ] && finalize "you have to state the bridge to which attach the device with parameter --bridge"
-    ! check_bridge "$BRIDGENAME" && finalize "bridge $BRIDGENAME does not exist"
+    [ "$BRIDGENAME" == "" ] && finalize "you have to state the bridge\
+        to which attach the device with parameter --bridge"
+    ! check_bridge "$BRIDGENAME" &&\
+        finalize "bridge $BRIDGENAME does not exist"
     create_device $ID $BRIDGENAME $DEVICENAME
 fi
+
 
 if is_true $CREATE || is_true $UPDATE; then
     [ "$MACADDR" != "" ] && assign_mac $ID "$DEVICENAME" "$MACADDR"
@@ -420,9 +489,11 @@ if is_true $CREATE || is_true $UPDATE; then
     [ "$GW" != "" ] && assign_gw $ID "$DEVICENAME" "$GW"
 fi
 
+
 if is_true $INFO; then
     filter_interfaces $ID "$MACADDR" "$IPADDR"
 fi
+
 
 is_true $DELETE && delete_device $ID "$DEVICENAME"
 is_true $CLEAN_NAMESPACES && cleanup_ns $ID

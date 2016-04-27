@@ -9,14 +9,18 @@ LVM_VG_PREFIX="vg-one-"
 PATH=$PATH:/sbin:/bin:/usr/sbin:/usr/bin which vgdisplay &> /dev/null
 
 if [ $? == 0 ]; then
-    LVM_SIZE_CMD="sudo vgdisplay --separator : --units m -o vg_size,vg_free --nosuffix --noheadings -C"
+    LVM_SIZE_CMD="sudo vgdisplay --separator : --units m\
+        -o vg_size,vg_free --nosuffix --noheadings -C"
 fi
 
 mkdir -p "$DATASTORE_LOCATION"
 
-USED_MB=$(df -B1M -P $DATASTORE_LOCATION 2>/dev/null | tail -n 1 | awk '{print $3}')
-TOTAL_MB=$(df -B1M -P $DATASTORE_LOCATION 2>/dev/null | tail -n 1 | awk '{print $2}')
-FREE_MB=$(df -B1M -P $DATASTORE_LOCATION 2>/dev/null | tail -n 1 | awk '{print $4}')
+USED_MB=$(df -B1M -P $DATASTORE_LOCATION 2>/dev/null |\
+    tail -n 1 | awk '{print $3}')
+TOTAL_MB=$(df -B1M -P $DATASTORE_LOCATION 2>/dev/null |\
+    tail -n 1 | awk '{print $2}')
+FREE_MB=$(df -B1M -P $DATASTORE_LOCATION 2>/dev/null |\
+    tail -n 1 | awk '{print $4}')
 
 USED_MB=${USED_MB:-"0"}
 TOTAL_MB=${TOTAL_MB:-"0"}
