@@ -42,7 +42,7 @@ split_dock_name "$SRC" SERVER USER IMAGE TAG
 SERVER=${SERVER:-$LOCAL_SERVER}
 TAG=${TAG:-latest}
 if [ "$SERVER" != "$LOCAL_SERVER" ]; then
-	log_error "cannot remove images from outside our server"
+    log_error "cannot remove images from outside our server"
 fi
 
 # DOCKNAME=$(build_dock_name "$SERVER" "$USER" "$IMAGE" "$TAG")

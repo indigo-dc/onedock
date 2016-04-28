@@ -19,7 +19,8 @@ sleep 2
 progress
 
 # Check the image creation status
-CMD="oneimage show -x $IMGID | /var/lib/one/remotes/datastore/xpath.rb /IMAGE/STATE"
+CMD="oneimage show -x $IMGID |\
+    /var/lib/one/remotes/datastore/xpath.rb /IMAGE/STATE"
 wait_for_timeout_nequal 300 0.5 "$CMD" "1"
 check_cmd_neq "$CMD" "1" && exit 1
 
