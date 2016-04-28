@@ -21,5 +21,7 @@ source ${DRIVER_PATH}/../../onedock.sh
 log_onedock_debug "$0 $@"
 setup_frontend
 
-log_onedock_debug "deleting files is not implemented, yet (there is no support to delete images in current implementation of docker registry)"
+log_onedock_debug "deleting files is not implemented, yet\
+    (there is no support to delete images in current implementation\
+    of docker registry)"
 exit 0

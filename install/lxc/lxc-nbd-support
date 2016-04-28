@@ -47,18 +47,18 @@
 cat > /etc/init.d/add-nbd << \EOT
 #!/bin/bash
 if [ "$1" == "start" ]; then
-        for device in /sys/devices/virtual/block/nbd*; do
-                RES="$(udevadm info --query=property $device)"
-                IFS=\= read _ SUBSYSTEM <<< $(echo "$RES"|grep SUBSYSTEM)
-                if [ "$SUBSYSTEM" == "block" ]; then
-                        IFS=\= read _ DEVNAME <<< $(echo "$RES"|grep DEVNAME)
-                        if [ "$DEVNAME" != "" ] && [ ! -b "$DEVNAME" ]; then
-                                IFS=\= read _ MAJOR <<< $(echo "$RES"|grep MAJOR)
-                                IFS=\= read _ MINOR <<< $(echo "$RES"|grep MINOR)
-                                mknod -m 660 $DEVNAME b $MAJOR $MINOR
-                        fi
-                fi
-        done
+    for device in /sys/devices/virtual/block/nbd*; do
+        RES="$(udevadm info --query=property $device)"
+        IFS=\= read _ SUBSYSTEM <<< $(echo "$RES"|grep SUBSYSTEM)
+        if [ "$SUBSYSTEM" == "block" ]; then
+            IFS=\= read _ DEVNAME <<< $(echo "$RES"|grep DEVNAME)
+            if [ "$DEVNAME" != "" ] && [ ! -b "$DEVNAME" ]; then
+                IFS=\= read _ MAJOR <<< $(echo "$RES"|grep MAJOR)
+                IFS=\= read _ MINOR <<< $(echo "$RES"|grep MINOR)
+                mknod -m 660 $DEVNAME b $MAJOR $MINOR
+            fi
+        fi
+    done
 fi
 EOT
 
@@ -116,6 +116,8 @@ cat > /etc/udev/rules.d/99-nbd.rules << \EOT
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-KERNEL=="nbd[0-9]*", ACTION=="add", SUBSYSTEM=="block", RUN+="/etc/udev/nbd-partitions"
-KERNEL=="nbd[0-9]*", ACTION=="remove", SUBSYSTEM=="block", RUN+="/etc/udev/nbd-partitions"
+KERNEL=="nbd[0-9]*", ACTION=="add", SUBSYSTEM=="block",\
+    RUN+="/etc/udev/nbd-partitions"
+KERNEL=="nbd[0-9]*", ACTION=="remove", SUBSYSTEM=="block",\
+    RUN+="/etc/udev/nbd-partitions"
 EOT
