@@ -21,50 +21,51 @@ source ${DRIVER_PATH}/../../onedock.sh
 setup_wn
 
 function mem_to_mb {
-	MEM=$(echo $1 | tr -d ' \n')
-	MEM_NUM=$(echo $MEM | sed 's/[^0-9\.]//g')
-	MEM_NUM=${MEM_NUM%%.*}
-	MEM_UNIT=$(echo "$MEM" | sed 's/[0-9\. ]//g' | tr '[a-z]' '[A-Z]')
-	case $MEM_UNIT in
-		MB)	MULT=1024;;
-		GB)	MULT=1048576;;
-		TB)	MULT=1073741824;;
-		*)	MULT=1
-	esac
-	echo $[ $MEM_NUM * $MULT ]
+    MEM=$(echo $1 | tr -d ' \n')
+    MEM_NUM=$(echo $MEM | sed 's/[^0-9\.]//g')
+    MEM_NUM=${MEM_NUM%%.*}
+    MEM_UNIT=$(echo "$MEM" | sed 's/[0-9\. ]//g' | tr '[a-z]' '[A-Z]')
+    case $MEM_UNIT in
+            MB)	MULT=1024;;
+            GB)	MULT=1048576;;
+            TB)	MULT=1073741824;;
+            *)	MULT=1
+    esac
+    echo $(( $MEM_NUM * $MULT ))
 }
 
 function dump_container_info {
-	INFO=$(echo "$CONTAINERS_JSON" | jq ".[] | select(.Config.Hostname==\"$1\") | .State.Running,.State.Paused,.Name")
-	STATS=$(docker stats --no-stream $1 | tail -n 1)
-	MEMS=$(echo $STATS | awk '{print $3,$4,$5}')
-	IFS=/ read USED_MEM MAX_MEM <<< $MEMS
-	read RUNNING PAUSED NAME<<< $INFO
-	NAME=$(echo $NAME | sed 's/^\"\/\(.*\)\"$/\1/')
-        if [ "$NAME" == "" ]; then
-            NAME=$1
-        fi
-	ID=${NAME##*-}
-	[ "$ID" == "$NAME" ] && ID=-1
-	case $RUNNING in
-		true)	STATE=a;;
-		false)	STATE=p;;
-		*)	STATE=e;;
-	esac
-	USEDMEMORY=$(mem_to_mb "$USED_MEM")
-	USEDCPU=$(echo $STATS tr -d '%' | awk '{print $2*100}')
-	echo "VM=[
-	ID=$ID,
-	DEPLOY_ID=$NAME,
-	POLL=\"STATE=$STATE USEDMEMORY=$USEDMEMORY USEDCPU=$USEDCPU\"]"
+    INFO=$(echo "$CONTAINERS_JSON" |\
+        jq ".[] | select(.Config.Hostname==\"$1\") |\
+        .State.Running,.State.Paused,.Name")
+    STATS=$(docker stats --no-stream $1 | tail -n 1)
+    MEMS=$(echo $STATS | awk '{print $3,$4,$5}')
+    IFS=/ read USED_MEM MAX_MEM <<< $MEMS
+    read RUNNING PAUSED NAME<<< $INFO
+    NAME=$(echo $NAME | sed 's/^\"\/\(.*\)\"$/\1/')
+    if [ "$NAME" == "" ]; then
+        NAME=$1
+    fi
+    ID=${NAME##*-}
+    [ "$ID" == "$NAME" ] && ID=-1
+    case $RUNNING in
+        true)	STATE=a;;
+        false)	STATE=p;;
+        *)	STATE=e;;
+    esac
+    USEDMEMORY=$(mem_to_mb "$USED_MEM")
+    USEDCPU=$(echo $STATS tr -d '%' | awk '{print $2*100}')
+    echo "VM=[
+    ID=$ID,
+    DEPLOY_ID=$NAME,
+    POLL=\"STATE=$STATE USEDMEMORY=$USEDMEMORY USEDCPU=$USEDCPU\"]"
 }
 
-# CONTAINERS=$(docker ps -aq)
 if [ "$1" == "" ]; then
-	CONTAINERS=$(docker ps -q 2>/dev/null)
-        [ $? -ne 0 ] && echo "failed to connect to docker" && exit 1
+    CONTAINERS=$(docker ps -q 2>/dev/null)
+    [ $? -ne 0 ] && echo "failed to connect to docker" && exit 1
 else
-	CONTAINERS=$1
+    CONTAINERS=$1
 fi
 
 if [ "$CONTAINERS" != "" ]; then
