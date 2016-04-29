@@ -19,7 +19,8 @@
 (
 
 running_pid=$(cat /tmp/one-collectd-client.pid)
-pids=$(ps axuwww | grep /collectd-client.rb | grep -v grep | awk '{ print $2 }' | grep -v "^${running_pid}$")
+pids=$(ps axuwww | grep /collectd-client.rb | \
+    grep -v grep | awk '{ print $2 }' | grep -v "^${running_pid}$")
 
 if [ -n "$pids" ]; then
     kill -6 $pids

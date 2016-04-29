@@ -2,7 +2,8 @@
 set -e
 
 # Get the docker IP
-DOCKER0IP=$(ip addr show dev docker0 | grep 'inet ' | awk '{print $2}' | sed 's/\/.*$//')
+DOCKER0IP=$(ip addr show dev docker0 | grep 'inet ' | \
+    awk '{print $2}' | sed 's/\/.*$//')
 
 # Create test data
 cat > /tmp/docker-private.net << EOF
