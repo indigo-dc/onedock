@@ -19,10 +19,12 @@
 # -------- Set up the environment to source common tools & conf ------------
 
 
-[ -e ${DRIVER_PATH}/../../onedock.conf ] && source ${DRIVER_PATH}/../../onedock.conf
+[ -e ${DRIVER_PATH}/../../onedock.conf ] && \
+    source ${DRIVER_PATH}/../../onedock.conf
 
 function is_true {
-    local V=$(echo $1 | tr '[a-z]' '[A-Z]')
+    local V
+    V=$(echo $1 | tr '[a-z]' '[A-Z]')
     [ "$V" == "TRUE" ] && return 0
     [ "$V" == "YES" ] && return 0
     [ "$V" == "1" ] && return 0
@@ -35,7 +37,7 @@ function setup_frontend {
     else
         LIB_LOCATION=$ONE_LOCATION/lib
     fi
-    
+
     source ${DRIVER_PATH}/../../datastore/libfs.sh
     export LIB_LOCATION
     export XPATH_APP="${DRIVER_PATH}/../../datastore/xpath.rb"
@@ -45,7 +47,7 @@ function setup_frontend {
     else
         TMCOMMON=$ONE_LOCATION/var/remotes/tm/tm_common.sh
     fi
-    
+
     . $TMCOMMON
     export TMCOMMON
 }
@@ -66,80 +68,80 @@ function read_xpath {
     done
     local i
     unset i XPATH_ELEMENTS
-    
+
     while IFS= read -r -d '' element; do
         XPATH_ELEMENTS[i++]="$element"
     done < <(echo "$CONTENT" | $XPATH_APP --stdin $QUERY_STR)
 }
 
 function log_onedock {
-	if [ "$ONEDOCK_LOGFILE" != "" ]; then
-		echo "$(date -R) - $@" >> "$ONEDOCK_LOGFILE"
-	else
-		echo "$(date -R) - $@" >&2
-	fi
+    if [ "$ONEDOCK_LOGFILE" != "" ]; then
+        echo "$(date -R) - $@" >> "$ONEDOCK_LOGFILE"
+    else
+        echo "$(date -R) - $@" >&2
+    fi
 }
 
 function log_onedock_debug {
-	if [ "$ONEDOCK_DEBUG" == "True" ]; then
-		if [ "$ONEDOCK_LOGFILE" != "" ]; then
-			echo "$(date -R) - $@" >> "$ONEDOCK_LOGFILE"
-		else
-			echo "$(date -R) - $@" >&2
-		fi
-	fi
+    if [ "$ONEDOCK_DEBUG" == "True" ]; then
+        if [ "$ONEDOCK_LOGFILE" != "" ]; then
+            echo "$(date -R) - $@" >> "$ONEDOCK_LOGFILE"
+        else
+            echo "$(date -R) - $@" >&2
+        fi
+    fi
 }
 
 function onedock_exec_and_log {
-	log_onedock "$1"
-	exec_and_log "$1" "$2"
+    log_onedock "$1"
+    exec_and_log "$1" "$2"
 }
 
 function build_dock_name {
-        SERVER=$1/
-        USER=$2/
-        IMAGE=$3
-        TAG=:$4
+    SERVER=$1/
+    USER=$2/
+    IMAGE=$3
+    TAG=:$4
 
-        [ "$SERVER" == "/" ] && SERVER=
-        [ "$USER" == "/" ] && USER=
-        [ "$TAG" == ":" ] && TAG=
-        echo "$SERVER$USER$IMAGE$TAG"
+    [ "$SERVER" == "/" ] && SERVER=
+    [ "$USER" == "/" ] && USER=
+    [ "$TAG" == ":" ] && TAG=
+    echo "$SERVER$USER$IMAGE$TAG"
 }
 
 function _split_dock_name {
-	IFS=
-        SERVER=
-        IMAGE=
-        USER=
-        TAG=
-        IMAGE=$1
+    IFS=
+    SERVER=
+    IMAGE=
+    USER=
+    TAG=
+    IMAGE=$1
 
-        IFS=/ read F1 F2 F3 <<< "$IMAGE"
-        if [ "$F3" != "" ]; then
-                # F3 es la imagen       
-                IMAGE=$F3
-                USER=$F2
-                SERVER=$F1
-        elif [ "$F2" != "" ]; then
-                # solo hay dos, con lo que F2 es la imagen
-                IMAGE=$F2
-                _SERVER=${F1##*:}
-                _PORT=${F1%%:*}
-                if [ "$_SERVER" != "$_PORT" ]; then
-                        # F1 tiene formato servidor:puerto
-                        SERVER=$F1
-                else
-                        USER=$F1
-                fi
+    IFS=/ read F1 F2 F3 <<< "$IMAGE"
+    if [ "$F3" != "" ]; then
+        # F3 es la imagen       
+        IMAGE=$F3
+        USER=$F2
+        SERVER=$F1
+    elif [ "$F2" != "" ]; then
+        # solo hay dos, con lo que F2 es la imagen
+        IMAGE=$F2
+        _SERVER=${F1##*:}
+        _PORT=${F1%%:*}
+        if [ "$_SERVER" != "$_PORT" ]; then
+            # F1 tiene formato servidor:puerto
+            SERVER=$F1
         else
-                IMAGE=$F1
+            USER=$F1
         fi
-        _TAG=${IMAGE##*:}
-        IMAGE=${IMAGE%%:*}
-        [ "$_TAG" != "$IMAGE" ] && TAG=$_TAG
+    else
+        IMAGE=$F1
+    fi
+    _TAG=${IMAGE##*:}
+    IMAGE=${IMAGE%%:*}
+    [ "$_TAG" != "$IMAGE" ] && TAG=$_TAG
 
-	echo "$SERVER/$USER/$IMAGE/$TAG"
+    echo "$SERVER/$USER/$IMAGE/$TAG"
 }
 
 function split_dock_name {
@@ -158,11 +160,14 @@ function split_dock_name {
 function get_imagename_from_file {
     FILE=$1
     CONTENT=$(tar --extract --file "$FILE" repositories -O)
-    [ $? -ne 0 ] && echo "file $FILE is not a docker image (does not have the proper format)" && return 1
+    [ $? -ne 0 ] && echo "file $FILE is not a docker image \
+        (does not have the proper format)" && return 1
     IMAGE_COUNT=$(echo "$CONTENT" | jq '.[] | keys | length')
-    [ "$IMAGE_COUNT" != "1" ] && echo "file $FILEcontains more than one image or other error has happened: $IMAGE_COUNT" && return 1
+    [ "$IMAGE_COUNT" != "1" ] && echo "file $FILEcontains more than one image \
+        or other error has happened: $IMAGE_COUNT" && return 1
     IMAGE=$(echo "$CONTENT" |  jq 'keys | .[0]'  | sed 's/^"\(.*\)"$/\1/')
-    TAG=$(echo "$CONTENT" | jq ".$IMAGE | keys | .[0]" | sed 's/^"\(.*\)"$/\1/')	
+    TAG=$(echo "$CONTENT" | jq ".$IMAGE | keys | .[0]" | \
+        sed 's/^"\(.*\)"$/\1/')
     echo "$IMAGE:$TAG"
     return 0
 }

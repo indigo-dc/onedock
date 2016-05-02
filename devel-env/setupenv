@@ -36,7 +36,11 @@ TM_MAD_CONF = [
     name = "onedock", ln_target = "SYSTEM", clone_target = "SYSTEM", shared = "yes"
 ]
 EOT
-sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' ./etc_one/oned.conf
+sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{
+s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};
+/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{
+s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' \
+    ./etc_one/oned.conf
 
 docker stop $DOCKID && docker rm $DOCKID
 
@@ -48,6 +52,7 @@ cp ../onedock.conf ./var_lib_one/remotes/
 cp ../onedock.sh ./var_lib_one/remotes/
 
 echo "export LOCAL_SERVER=" >> ./var_lib_one/remotes/onedock.conf
+echo "export DATASTORE_DATA_PATH=" >> ./var_lib_one/remotes/onedock.conf
 
 chown -R oneadmin:oneadmin var_lib_one etc_one var_tmp_one
 

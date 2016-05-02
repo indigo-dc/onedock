@@ -20,7 +20,8 @@ create_vm /tmp/onedock.vm
 
 progress
 
-DEVICE=$(docker inspect -f '{{range .HostConfig.Devices}}{{.PathOnHost}}{{end}}' one-$VMID)
+DEVICE=$(docker inspect -f \
+    '{{range .HostConfig.Devices}}{{.PathOnHost}}{{end}}' one-$VMID)
 SIZE=$(cat /sys/class/block/$(basename $DEVICE)/size)
 [ $SIZE -eq 0 ] && exit 1
 

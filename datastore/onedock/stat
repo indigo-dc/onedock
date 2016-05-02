@@ -29,25 +29,25 @@ setup_frontend
 
 DRIVER_ACTION=$1
 
-read_xpath $(echo "$DRIVER_ACTION" | base64 -d) "/DS_DRIVER_ACTION_DATA/IMAGE/PATH"
+read_xpath $(echo "$DRIVER_ACTION" | base64 -d) \
+    "/DS_DRIVER_ACTION_DATA/IMAGE/PATH"
 SRC="${XPATH_ELEMENTS[0]}"
 
 SIZE=0
 if [[ "$SRC" =~ ^docker://.*$ ]]; then
-	log_onedock_debug "we should check the size from the global docker hub directory"
-	SIZE=0
+    log_onedock_debug "we should check the size from the global docker \
+        hub directory"
+    SIZE=0
 else
-	[ ! -f "$SRC" ] && log_error "cannot access to the source file $SRC" && echo "0" && exit 1
-	SIZE=$(tar xfO "$SRC" | wc -c)
-	[ $? -ne 0 ] && log_error "could not get the size of file $SRC" && echo "0" && exit 1
-	SIZE=$[ $SIZE / 1048576 ]
+    [ ! -f "$SRC" ] && log_error "cannot access to the source file $SRC" && \
+        echo "0" && exit 1
+    SIZE=$(tar xfO "$SRC" | wc -c)
+    [ $? -ne 0 ] && log_error "could not get the size of file $SRC" && \
+        echo "0" && exit 1
+    SIZE=$(( $SIZE / 1048576 ))
 fi
 
 echo $SIZE
-exit 0
-
-
-
 exit 0
 
 # ----------- The following code will check the size from a docker registry v2
