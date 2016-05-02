@@ -4,7 +4,8 @@ IMAGENAME=oddevel:frontend
 docker inspect $CONTAINER > /dev/null 2> /dev/null
 
 if [ $? -eq 0 ]; then
-    read -p "container $CONTAINER exists. Do you want to kill it? (y/N) " REMOVE
+    read -p "container $CONTAINER exists. \
+        Do you want to kill it? (y/N) " REMOVE
     [ "$REMOVE" != "y" ] && echo "aborting" && exit 1
 fi
 
