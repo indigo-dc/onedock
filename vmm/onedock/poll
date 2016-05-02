@@ -24,6 +24,9 @@ function mem_to_mb {
     MEM=$(echo $1 | tr -d ' \n')
     MEM_NUM=$(echo $MEM | sed 's/[^0-9\.]//g')
     MEM_NUM=${MEM_NUM%%.*}
+    
+    [ "$MEM_NUM" == "" ] && MEM_NUM=1
+    
     MEM_UNIT=$(echo "$MEM" | sed 's/[0-9\. ]//g' | tr '[a-z]' '[A-Z]')
     case $MEM_UNIT in
         MB)	MULT=1024;;

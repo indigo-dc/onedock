@@ -15,6 +15,12 @@ done
 [ "$NAME" == "" ] && \
     echo "please provide a name for the container" >&2 && exit 1
 
+modprobe nbd
+if [ $? -ne 0 ]; then
+    echo "you need to activate nbd (e.g. modprobe nbd)"
+    exit 1
+fi
+
 if [ $CREATE -eq 1 ]; then
     lxc-create -n "$NAME" -t ubuntu
     cat >> /var/lib/lxc/$NAME/config << EOT
