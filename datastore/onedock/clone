@@ -32,7 +32,8 @@ DOCKNAME=$(build_dock_name "$SERVER" "$USER" "$IMAGE" "$TAG")
 exec_and_log "docker pull $DOCKNAME" "Error pulling $DOCKNAME"
 
 LOCALDOCKNAME=$(build_dock_name "$LOCAL_SERVER" "" "dockerimage" "$ID")
-exec_and_log "docker tag -f $DOCKNAME $LOCALDOCKNAME" "Error creating tag $LOCALDOCKNAME for image $DOCKNAME in local repository"
+exec_and_log "docker tag -f $DOCKNAME $LOCALDOCKNAME" \
+    "Error creating tag $LOCALDOCKNAME for image $DOCKNAME in local repository"
 exec_and_log "docker push $LOCALDOCKNAME" "Error pushing tag $LOCALDOCKNAME"
 exec_and_log "docker rmi $DOCKNAME" # 1>&2> /dev/null
 log_info "image \"$DOCKNAME\" successfully pushed into \"$LOCALDOCKNAME\""

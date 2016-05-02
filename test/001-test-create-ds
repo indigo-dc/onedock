@@ -16,7 +16,8 @@ DSID=$(onedatastore create /tmp/onedock.ds | awk '{print $2}')
 
 progress
 
-CMD="onedatastore show $DSID -x | /var/lib/one/remotes/datastore/xpath.rb /DATASTORE/STATE"
+CMD="onedatastore show $DSID -x | \
+    /var/lib/one/remotes/datastore/xpath.rb /DATASTORE/STATE"
 wait_for_timeout_nequal 30 1 "$CMD" "0"
 
 check_cmd_neq "$CMD" "0" && exit 1

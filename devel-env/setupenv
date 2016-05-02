@@ -36,7 +36,11 @@ TM_MAD_CONF = [
     name = "onedock", ln_target = "SYSTEM", clone_target = "SYSTEM", shared = "yes"
 ]
 EOT
-sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' ./etc_one/oned.conf
+sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{
+s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};
+/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{
+s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' \
+    ./etc_one/oned.conf
 
 docker stop $DOCKID && docker rm $DOCKID
 

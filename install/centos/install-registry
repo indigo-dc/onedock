@@ -1,7 +1,9 @@
 #!/bin/bash
 mkdir -p /var/lib/docker-registry/data
 cd /var/lib/docker-registry/
-mkdir -p certs && openssl req -newkey rsa:4096 -nodes -sha256 -keyout certs/domain.key -x509 -days 365 -out certs/domain.crt <<< cat << EOT
+mkdir -p certs && openssl req -newkey rsa:4096 \
+    -nodes -sha256 -keyout certs/domain.key -x509 \
+    -days 365 -out certs/domain.crt <<< cat << EOT
 ES
 .
 .
@@ -11,7 +13,9 @@ $HOSTNAME
 .
 EOT
 mkdir -p /etc/docker/certs.d/$HOSTNAME:5000/
-cp /var/lib/docker-registry/certs/domain.crt /etc/docker/certs.d/$HOSTNAME\:5000/
-cp /var/lib/docker-registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/
+cp /var/lib/docker-registry/certs/domain.crt \
+    /etc/docker/certs.d/$HOSTNAME\:5000/
+cp /var/lib/docker-registry/certs/domain.crt \
+    /etc/pki/ca-trust/source/anchors/
 update-ca-trust extract
 service docker restart

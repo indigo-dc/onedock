@@ -17,6 +17,7 @@
 #
 
 DRIVER_PATH=$(dirname $0)
+ONEDOCK_FOLDER=$DRIVER_PATH
 source ${DRIVER_PATH}/../../onedock.sh
 setup_wn
 log_onedock_debug "$0 $@"

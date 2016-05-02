@@ -34,22 +34,22 @@ function setup_disk {
     TARGET=$3
     DEVICES_FILE=$4
     CLEANUP_FILE=$5
-    
+
     NBD_TGT=$(find_nbd)
     if [ "$NBD_TGT" == "" ]; then
         echo "could not find free devices to connect disk $DISK_ID"
         return 1
     fi
-    
+
     log_onedock_debug "connecting disk $2 in $NBD_TGT"
     log_onedock_debug "qemu-nbd -c \"$NBD_TGT\" \"${FOLDER}/disk.${DISK_ID}\""
     sudo /usr/bin/qemu-nbd -c $NBD_TGT "${FOLDER}/disk.${DISK_ID}" 2> /dev/null
     if [ $? -ne 0 ]; then
-        log_onedock_debug "FAILED: connecting disk $DISK_ID in $NBD_TGT"    
+        log_onedock_debug "FAILED: connecting disk $DISK_ID in $NBD_TGT"
         echo "could not connect the disk $DISK_ID"
         return 2
     fi
-    
+
     cat >> "$CLEANUP_FILE" << EOT
 sudo /usr/bin/qemu-nbd -d $NBD_TGT
 EOT
@@ -58,7 +58,7 @@ EOT
         L_STRING=\${L_STRING:9}
         for L in \$L_STRING; do mkdir -p \$(dirname "\$L") && ln -s /dev/${TARGET} \$L; done
 EOT
-    
+
     echo "$NBD_TGT" >> "$DEVICES_FILE"
     EXPORTED_DEVICES="--device $NBD_TGT:/dev/$TARGET"
     DEVNAME=$(basename $NBD_TGT)
@@ -67,7 +67,8 @@ EOT
         for partition in $PARTITIONS; do
             PARTITION_NAME=$(basename $partition)
             PARTITION_ID=${PARTITION_NAME##${DEVNAME}p}
-            EXPORTED_DEVICES="${EXPORTED_DEVICES} --device ${NBD_TGT}p${PARTITION_ID}:/dev/${TARGET}${PARTITION_ID}"
+            EXPORTED_DEVICES="${EXPORTED_DEVICES} --device \
+                ${NBD_TGT}p${PARTITION_ID}:/dev/${TARGET}${PARTITION_ID}"
             cat >> "$BOOTSTRAP_FILE" << EOT
         L_STRING=\$(udevadm test \$(readlink -f /sys/block/${TARGET}/${TARGET}${PARTITION_ID}) 2> /dev/null | grep DEVLINKS)
         L_STRING=\${L_STRING:9}
@@ -82,14 +83,15 @@ EOT
 function cleanup_disk {
     DEVICE=$1
     log_onedock_debug "asked to cleanup device $DEVICE"
-    [ -b $DEVICE ] && log_onedock_debug "sudo /usr/bin/qemu-nbd -d $DEVICE" && sudo /usr/bin/qemu-nbd -d $DEVICE
+    [ -b $DEVICE ] && log_onedock_debug "sudo /usr/bin/qemu-nbd -d $DEVICE" &&\
+        sudo /usr/bin/qemu-nbd -d $DEVICE
 }
 
 function cleanup_disks {
     DOMXML=$1
     FOLDER=$2
     DEVICES_FILE=$3
-    
+
     for device in $(cat $DEVICES_FILE); do
         cleanup_disk "$device"
     done
@@ -102,11 +104,12 @@ function setup_devices {
     DEVICES_FILE=$3
     CLEANUP_FILE=$4
     BOOTSTRAP_FILE=$5
-    
+
     cat <<EOT > $DEVICES_FILE
 EOT
     DEVICES_STR=
-    DISKS="$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/DISK -v "concat(DISK_ID,';',TARGET,';',TYPE)" -n)"
+    DISKS="$(echo "$DOMXML" | xmlstarlet sel -t \
+        -m /VM/TEMPLATE/DISK -v "concat(DISK_ID,';',TARGET,';',TYPE)" -n)"
     for DISK in $DISKS; do
         DISK_ID= TARGET= TYPE=
         IFS=';' read DISK_ID TARGET TYPE <<< "$DISK"
@@ -116,21 +119,27 @@ EOT
 
         RESULT=0
         if [ "$TYPE" == "fs" ] || [ "$TYPE" == "FILE" ]; then
-            log_onedock_debug "setup_disk $FOLDER $DISK_ID $TARGET $DEVICES_FILE $CLEANUP_FILE" "$BOOTSTRAP_FILE"
-            CURRENT_DEVICE_STR=$(setup_disk "$FOLDER" "$DISK_ID" "$TARGET" "$DEVICES_FILE" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
+            log_onedock_debug "setup_disk $FOLDER $DISK_ID $TARGET \
+                $DEVICES_FILE $CLEANUP_FILE" "$BOOTSTRAP_FILE"
+            CURRENT_DEVICE_STR=$(setup_disk "$FOLDER" "$DISK_ID" "$TARGET" \
+                "$DEVICES_FILE" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
             RESULT=$?
         elif [ "$TYPE" == "CDROM" ]; then
-            log_onedock_debug "setup_cd ${FOLDER}/disk.${DISK_ID} $TARGET $CLEANUP_FILE $BOOTSTRAP_FILE"
-            CURRENT_DEVICE_STR=$(setup_cd "${FOLDER}/disk.${DISK_ID}" "$TARGET" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
+            log_onedock_debug "setup_cd ${FOLDER}/disk.${DISK_ID} $TARGET \
+                $CLEANUP_FILE $BOOTSTRAP_FILE"
+            CURRENT_DEVICE_STR=$(setup_cd "${FOLDER}/disk.${DISK_ID}" \
+                "$TARGET" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
             RESULT=$?
         else
-            log_onedock_debug "FAILED: wrong type for disk $DISK_ID"    
-            error_message "we only support disks of type 'fs', 'FILE' and 'CDROM'... type '$TYPE' found"
+            log_onedock_debug "FAILED: wrong type for disk $DISK_ID"
+            error_message "we only support disks of type 'fs', 'FILE' and \
+                'CDROM'... type '$TYPE' found"
             return 1
         fi
-        
+
         if [ $RESULT -ne 0 ]; then
-            log_onedock_debug "FAILED: could not setup disk $DISK_ID ($CURRENT_DEVICE_STR)"    
+            log_onedock_debug "FAILED: could not setup disk \
+                $DISK_ID ($CURRENT_DEVICE_STR)"
             error_message "could not setup disk $DISK_ID ($CURRENT_DEVICE_STR)"
             # This can be removed because cleaning up is now an integrated procedure
             # cleanup_disks "$DOMXML" "$FOLDER" "$DEVICES_FILE"
@@ -138,7 +147,7 @@ EOT
         fi
         DEVICES_STR="$DEVICES_STR$CURRENT_DEVICE_STR "
     done
-        
+
     echo $DEVICES_STR
     return 0
 }
@@ -148,13 +157,14 @@ function setup_cd {
     TARGET=$2
     CLEANUP_FILE=$3
     BOOTSTRAP_FILE=$4
-    
+
     ISOFILE=$(readlink -f $ISOFILE)
-    
+
     LOOP_DEVICE=$(sudo losetup -f --show "$ISOFILE" 2>&1)
     if [ $? -ne 0 ]; then
         log_onedock_debug "FAILED: to setup loop device for iso file $ISOFILE"
-        error_message "failed to setup loop device for iso file $ISOFILE ($LOOP_DEVICE)"
+        error_message "failed to setup loop device for iso \
+            file $ISOFILE ($LOOP_DEVICE)"
         return 1
     else
         echo "--device ${LOOP_DEVICE}:/dev/${TARGET}"
@@ -177,13 +187,16 @@ function setup_context {
     BOOTSTRAP_FILE=$5
 
     CONTEXT_STR=
-    CONTEXT_DISK="$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/CONTEXT -v "concat(DISK_ID,';',TARGET)" -n)"
+    CONTEXT_DISK="$(echo "$DOMXML" | xmlstarlet sel -t \
+        -m /VM/TEMPLATE/CONTEXT -v "concat(DISK_ID,';',TARGET)" -n)"
     DISK_ID= TARGET=
     IFS=';' read DISK_ID TARGET <<< "$CONTEXT_DISK"
 
     if [ "$DISK_ID" != "" ]; then
-        log_onedock_debug "setup_cd ${FOLDER}/disk.${DISK_ID} $TARGET $CLEANUP_FILE $BOOTSTRAP_FILE"
-        CONTEXT_STR=$(setup_cd "${FOLDER}/disk.${DISK_ID}" "$TARGET" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
+        log_onedock_debug "setup_cd ${FOLDER}/disk.${DISK_ID} \
+            $TARGET $CLEANUP_FILE $BOOTSTRAP_FILE"
+        CONTEXT_STR=$(setup_cd "${FOLDER}/disk.${DISK_ID}" \
+            "$TARGET" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
         if [ $? -ne 0 ]; then
             return 1
         fi
@@ -198,10 +211,11 @@ function setup_network {
     NETWORKFILE=$3
     CLEANUP_FILE=$4
     BOOTSTRAP_FILE=$5
-    
+
     cat <<EOT > $NETWORKFILE
 EOT
-    NICS="$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/NIC -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC)" -n)"
+    NICS="$(echo "$DOMXML" | xmlstarlet sel -t \
+        -m /VM/TEMPLATE/NIC -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC)" -n)"
     for NIC in $NICS; do
         NIC_ID= BRIDGE= IP= MAC=
         IFS=';' read NIC_ID BRIDGE IP MAC <<< "$NIC"
@@ -213,14 +227,18 @@ EOT
         [ "$BRIDGE" != "" ] && BRIDGE_STR="--bridge $BRIDGE"
         [ "$MAC" != "" ] && MAC_STR="--mac $MAC"
         if [ "$IP" != "" ]; then
-            [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && IP=$IP/$ONEDOCK_DEFAULT_NETMASK
+            [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && \
+                IP=$IP/$ONEDOCK_DEFAULT_NETMASK
             IP_STR="--ip $IP"
         fi
-        
+
         # Now we get the context for the network, to get the IP address
         NICNAME=ETH${NIC_ID}
-        NET_CONTEXT="$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/CONTEXT -v "concat(${NICNAME}_IP,';',${NICNAME}_MAC,';',${NICNAME}_MASK,';',${NICNAME}_NETWORK,';',${NICNAME}_GATEWAY,';',${NICNAME}_DNS)")"
-        
+        NET_CONTEXT="$(echo "$DOMXML" | xmlstarlet sel -t \
+        -m /VM/TEMPLATE/CONTEXT -v "concat(${NICNAME}_IP,';',${NICNAME}_MAC,\
+        ';',${NICNAME}_MASK,';',${NICNAME}_NETWORK,';',${NICNAME}_GATEWAY,\
+        ';',${NICNAME}_DNS)")"
+
         # Initialize variables
         C_IP= C_MAC= C_MASK= C_NET= C_GW= C_DNS=
         IFS=';' read C_IP C_MAC C_MASK C_NET C_GW C_DNS <<< "$NET_CONTEXT"
@@ -232,11 +250,12 @@ EOT
             # If there is no context for IP address, should we set the IP using DHCP?
             is_true "$ONEDOCK_DEFAULT_DHCP" && IP_STR="--dhcp"
         fi
-        
+
         [ "$C_MAC" != "" ] && MAC_STR="--mac $C_MAC"
         [ "$C_GW" != "" ] && GW_STR="--gateway $C_GW"
-        
-        echo "$SUDO $DN --container-name $CONTAINERNAME $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $NETWORKFILE
+
+        echo "$SUDO $DN --container-name $CONTAINERNAME \
+            $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $NETWORKFILE
     done
     echo "--net=\"none\" -h $CONTAINERNAME --add-host $CONTAINERNAME:127.0.1.1"
     return 0
@@ -246,12 +265,25 @@ function setup_vnc {
     DOMXML=$1
     CONTAINERNAME=$2
 
-    IFS=';' read VNCPORT VNCPASSWD <<< "$(echo "$DOMXML" | xmlstarlet sel -t -m /VM/TEMPLATE/GRAPHICS -v "concat(PORT,';',PASSWD)" -n)"
+    IFS=';' read VNCPORT VNCPASSWD <<< "$(echo "$DOMXML" | \
+        xmlstarlet sel -t -m /VM/TEMPLATE/GRAPHICS \
+        -v "concat(PORT,';',PASSWD)" -n)"
     if [ "$VNCPORT" != "" ]; then
         if [ "$VNCPASSWD" == "" ]; then
-            ( nohup bash -c "while [ \"\$(docker inspect -f '{{.State.Status}}' $CONTAINERNAME)\" == \"running\" ]; do echo 'respawning vnc term for $CONTAINERNAME'; sudo /usr/bin/svncterm -timeout 0 -rfbport \"$VNCPORT\" -c docker exec -it \"$CONTAINERNAME\" /bin/bash; done > /dev/null 2> /dev/null" )&
+            ( nohup bash -c "while [ \"\$(docker inspect \
+                -f '{{.State.Status}}' $CONTAINERNAME)\" == \"running\" ]; do \
+                echo 'respawning vnc term for $CONTAINERNAME'; \
+                sudo /usr/bin/svncterm -timeout 0 -rfbport \"$VNCPORT\" \
+                    -c docker exec -it \"$CONTAINERNAME\" /bin/bash; \
+                done > /dev/null 2> /dev/null" )&
         else
-            ( nohup bash -c "while [ \"\$(docker inspect -f '{{.State.Status}}' $CONTAINERNAME)\" == \"running\" ]; do echo 'respawning vnc term for $CONTAINERNAME'; sudo /usr/bin/svncterm -timeout 0 -passwd "$VNCPASSWD" -rfbport \"$VNCPORT\" -c docker exec -it \"$CONTAINERNAME\" /bin/bash; done > /dev/null 2> /dev/null" )&
+            ( nohup bash -c "while [ \"\$(docker inspect \
+                -f '{{.State.Status}}' $CONTAINERNAME)\" == \"running\" ]; do \
+                echo 'respawning vnc term for $CONTAINERNAME'; \
+                sudo /usr/bin/svncterm -timeout 0 \
+                -passwd \"$VNCPASSWD\" -rfbport \"$VNCPORT\" \
+                -c docker exec -it \"$CONTAINERNAME\" /bin/bash; \
+                done > /dev/null 2> /dev/null" )&
         fi
     else
         log_onedock_debug "VNC is not defined for $CONTAINERNAME"
@@ -261,11 +293,9 @@ function setup_vnc {
 }
 
 function exec_file {
-    RESULT="$(
-        $(cat "$1")
-    ) 2>&1"
+    RESULT="$(bash -c "$(cat "$1")" ) 2>&1"
     RETVAL=$?
-    
+
     if [ $RETVAL -ne 0 ]; then
         if [ "$2" != "" ]; then
             error_message "$2"
@@ -274,7 +304,7 @@ function exec_file {
         fi
         return 1
     fi
-        
+
     echo "$RESULT"
     return 0
 }

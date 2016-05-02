@@ -21,8 +21,13 @@ TM_MAD_CONF = [
     name = "onedock", ln_target = "SYSTEM", clone_target = "SYSTEM", shared = "yes"
 ]
 EOT
-sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' /etc/one/oned.conf
-echo "Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd" >> /etc/sudoers.d/opennebula
+sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/
+{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};
+/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/
+{s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' \
+    /etc/one/oned.conf
+echo "Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network,\
+    /usr/bin/qemu-nbd, /sbin/losetup" >> /etc/sudoers.d/opennebula
 sed -i.bak 's/^\(oneadmin ALL=.*\)$/\1, ONEDOCK/' /etc/sudoers.d/opennebula
 usermod -aG docker oneadmin
 sudo service opennebula restart
