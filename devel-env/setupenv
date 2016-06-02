@@ -50,6 +50,7 @@ cp -r ../im/onedock* ./var_lib_one/remotes/im/
 cp -r ../tm/onedock ./var_lib_one/remotes/tm/
 cp ../onedock.conf ./var_lib_one/remotes/
 cp ../onedock.sh ./var_lib_one/remotes/
+cp ../docker-manage-network ./var_lib_one/remotes/
 
 echo "export LOCAL_SERVER=" >> ./var_lib_one/remotes/onedock.conf
 echo "export DATASTORE_DATA_PATH=" >> ./var_lib_one/remotes/onedock.conf
