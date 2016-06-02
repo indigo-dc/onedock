@@ -23,7 +23,7 @@ setup_wn
 echo HYPERVISOR=docker
 TOTALCPU=$(cat /proc/cpuinfo  | grep processor | wc -l)
 echo TOTALCPU=$(( $TOTALCPU * 100 ))
-echo FREECPU=$(( $ $TOTALCPU - $(docker ps -q | wc -l) ] * 100 ))
+echo FREECPU=$(( $TOTALCPU - $(docker ps -q | wc -l) * 100 ))
 echo CPUSPEED=$(cat /proc/cpuinfo | grep MHz | \
     head -n 1 | awk -F: '{print $2}' | tr -d ' ')
 
