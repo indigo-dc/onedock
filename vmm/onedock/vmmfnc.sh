@@ -158,6 +158,12 @@ function setup_cd {
     CLEANUP_FILE=$3
     BOOTSTRAP_FILE=$4
 
+    if [ "$ONEDOCK_PRIVILEGED" != "True" -a "$ONEDOCK_SKIP_PRIVILEGED" == "True" ]; then
+        log_onedock_debug "Skipping mounting $TARGET because cannot create privileged\
+            containers and I am commited to avoid using it (ONEDOCK_SKIP_PRIVILEGED)"
+        return 0
+    fi
+
     ISOFILE=$(readlink -f $ISOFILE)
 
     LOOP_DEVICE=$(sudo losetup -f --show "$ISOFILE" 2>&1)
@@ -167,7 +173,9 @@ function setup_cd {
             file $ISOFILE ($LOOP_DEVICE)"
         return 1
     else
-        echo "--device ${LOOP_DEVICE}:/dev/${TARGET}"
+        echo "--privileged -v ${LOOP_DEVICE}:/dev/${TARGET}"
+        # Old mechanism (when not needed privileged containers to mount loop devices)
+        # echo "--privileged --device ${LOOP_DEVICE}:/dev/${TARGET}"
         cat >> "$CLEANUP_FILE" << EOT
 sudo losetup -d $LOOP_DEVICE
 EOT
@@ -177,6 +185,7 @@ EOT
         for L in \$L_STRING; do mkdir -p \$(dirname "\$L") && ln -s /dev/${TARGET} \$L; done
 EOT
     fi
+    return 0
 }
 
 function setup_context {
@@ -239,21 +248,22 @@ EOT
         ';',${NICNAME}_MASK,';',${NICNAME}_NETWORK,';',${NICNAME}_GATEWAY,\
         ';',${NICNAME}_DNS)")"
 
-        # Initialize variables
-        C_IP= C_MAC= C_MASK= C_NET= C_GW= C_DNS=
-        IFS=';' read C_IP C_MAC C_MASK C_NET C_GW C_DNS <<< "$NET_CONTEXT"
+        if [ "$NET_CONTEXT" != "" ]; then
+            # Initialize variables
+            C_IP= C_MAC= C_MASK= C_NET= C_GW= C_DNS=
+            IFS=';' read C_IP C_MAC C_MASK C_NET C_GW C_DNS <<< "$NET_CONTEXT"
 
-        if [ "$C_IP" != "" ]; then
-            IP_STR="--ip $C_IP"
-            [ "$C_MASK" != "" ] && IP_STR="${IP_STR}/${C_MASK}"
-        else
-            # If there is no context for IP address, should we set the IP using DHCP?
-            is_true "$ONEDOCK_DEFAULT_DHCP" && IP_STR="--dhcp"
+            if [ "$C_IP" != "" ]; then
+                IP_STR="--ip $C_IP"
+                [ "$C_MASK" != "" ] && IP_STR="${IP_STR}/${C_MASK}"
+            else
+                # If there is no context for IP address, should we set the IP using DHCP?
+                is_true "$ONEDOCK_DEFAULT_DHCP" && IP_STR="--dhcp"
+            fi
+
+            [ "$C_MAC" != "" ] && MAC_STR="--mac $C_MAC"
+            [ "$C_GW" != "" ] && GW_STR="--gateway $C_GW"
         fi
-
-        [ "$C_MAC" != "" ] && MAC_STR="--mac $C_MAC"
-        [ "$C_GW" != "" ] && GW_STR="--gateway $C_GW"
-
         echo "$SUDO $DN --container-name $CONTAINERNAME \
             $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $NETWORKFILE
     done
