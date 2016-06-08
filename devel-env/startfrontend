@@ -13,7 +13,10 @@ BASEDIR=$(readlink -e $(dirname $0))
 docker stop $CONTAINER && docker rm $CONTAINER
 docker run --name $CONTAINER -h $CONTAINER \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v $(which docker):/bin/docker \
     -v $BASEDIR/var_lib_one:/var/lib/one \
     -v $BASEDIR/etc_one:/etc/one \
     -v $PWD/..:/opt/onedock -id $IMAGENAME /bin/bash
+
+docker exec $CONTAINER groupmod -g $(cat /etc/group | grep docker | awk -F: '{print $3}') docker
+docker stop $CONTAINER
+docker start $CONTAINER

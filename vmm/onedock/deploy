@@ -17,11 +17,10 @@
 #
 
 DRIVER_PATH=$(dirname $0)
-ONEDOCK_FOLDER=$DRIVER_PATH
-source ${ONEDOCK_FOLDER}/../../onedock.sh
+source ${DRIVER_PATH}/../../onedock.sh
 setup_wn
 log_onedock_debug "$0 $@"
-source ${ONEDOCK_FOLDER}/vmmfnc.sh
+source ${DRIVER_PATH}/vmmfnc.sh
 
 domain=$1
 mkdir -p `dirname $domain`
@@ -39,7 +38,15 @@ unset i
 
 VMID="${XPATH_ELEMENTS[i++]}"
 NAME="${XPATH_ELEMENTS[i++]}"
-DN=$(readlink -e ${ONEDOCK_FOLDER}/../../docker-manage-network)
+DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
+
+if [ ! -e "$DN" ]; then
+    log_onedock_debug "docker-manage-network command does not exist. Please check that \
+    it is properly copied in the /var/lib/one/remotes folder and distributed in the\
+    hosts under the path /var/tmp/one"
+    exit -1
+fi
+
 CONTAINERNAME=one-$VMID
 DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$CONTAINERNAME" "0")
 
@@ -77,6 +84,19 @@ fi
 if [ "$DEVICES_STR" != "" -o "$CONTEXT_STR" != "" ]; then
     DEVICES_STR="$DEVICES_STR --cap-add SYS_ADMIN \
         --security-opt apparmor:unconfined"
+
+    if [ "$(echo "$DEVICES_STR$CONTEXT_STR" | grep -- '--privileged')" != "" ]; then
+        PRIV_STR="--privileged"
+        DEVICES_STR=$(echo "$DEVICES_STR" | sed 's/--privileged//g')
+        CONTEXT_STR=$(echo "$CONTEXT_STR" | sed 's/--privileged//g')
+    fi
+fi
+
+if [ "$PRIV_STR" != "" -a "$ONEDOCK_PRIVILEGED" != "True" ]; then
+    exec_file "$ONEDOCK_CLEANUP_FILE"
+    error_message "$domain needs to be privileged, but it is disabled \
+        (see ONEDOCK_PRIVILEGED var in config file)"
+    exit -1
 fi
 
 NETWORK_STR=$(setup_network "$DOMXML" "$DATASTOREFOLDER" \
@@ -96,9 +116,10 @@ else
     DOCKERRUNCMD=
 fi
 
-log_onedock_debug "docker run $NETWORK_STR $DEVICES_STR $CONTEXT_STR \
-    -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1"
-data=`docker run $NETWORK_STR $DEVICES_STR $CONTEXT_STR \
+log_onedock_debug "docker run $PRIV_STR $NETWORK_STR $DEVICES_STR \
+    $CONTEXT_STR -td --name $CONTAINERNAME $DISKIMAGENAME \
+    $DOCKERRUNCMD 2>&1"
+data=`docker run $PRIV_STR $NETWORK_STR $DEVICES_STR $CONTEXT_STR \
     -td --name $CONTAINERNAME $DISKIMAGENAME $DOCKERRUNCMD 2>&1`
 
 if [ $? -eq 0 ]; then

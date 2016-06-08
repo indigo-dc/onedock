@@ -29,7 +29,7 @@ setup_frontend
 
 DRIVER_ACTION=$1
 
-read_xpath $(echo "$DRIVER_ACTION" | base64 -d) \
+read_xpath "$(echo "$DRIVER_ACTION" | base64 -d)" \
     "/DS_DRIVER_ACTION_DATA/IMAGE/PATH"
 SRC="${XPATH_ELEMENTS[0]}"
 

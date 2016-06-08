@@ -59,7 +59,7 @@ function setup_wn {
 }
 
 function read_xpath {
-    CONTENT=$1
+    CONTENT="$1"
     shift
     QUERY_STR=
     while [ $# -gt 0 ]; do
