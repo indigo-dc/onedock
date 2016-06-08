@@ -110,6 +110,7 @@ EOT
     DEVICES_STR=
     DISKS="$(echo "$DOMXML" | xmlstarlet sel -t \
         -m /VM/TEMPLATE/DISK -v "concat(DISK_ID,';',TARGET,';',TYPE)" -n)"
+    [ $? -ne 0 ] && echo "failed to parse domain" && return 1
     for DISK in $DISKS; do
         DISK_ID= TARGET= TYPE=
         IFS=';' read DISK_ID TARGET TYPE <<< "$DISK"

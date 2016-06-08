@@ -25,8 +25,8 @@ setup_frontend
 
 split_dock_name "$SRC" SERVER USER IMAGE TAG
 
-log_error "clone is not yet supported"
-exit 1
+log_onedock "clone is not yet supported"
+exit 0
 
 DOCKNAME=$(build_dock_name "$SERVER" "$USER" "$IMAGE" "$TAG")
 exec_and_log "docker pull $DOCKNAME" "Error pulling $DOCKNAME"

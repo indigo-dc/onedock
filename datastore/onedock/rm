@@ -21,6 +21,9 @@ source ${DRIVER_PATH}/../../onedock.sh
 log_onedock_debug "$0 $@"
 setup_frontend
 
+log_onedock "there is not support to delete an image from the registry"
+exit 0
+
 DRV_ACTION=$1
 ID=$2
 
