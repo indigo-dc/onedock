@@ -66,7 +66,8 @@ if [ "$EXISTS" == "false" ] || [ "$EXISTS" == "true" ]; then
 fi
 
 DEVICES_STR=$(setup_devices "$DOMXML" "$DATASTOREFOLDER" \
-    "$ONEDOCK_DEVICES_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
+    "$ONEDOCK_DEVICES_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE" \
+    "$ONEDOCK_CONTAINER_FOLDER")
 if [ $? -ne 0 ]; then
     exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "could not setup devices for deployment $domain"
@@ -74,7 +75,8 @@ if [ $? -ne 0 ]; then
 fi
 
 CONTEXT_STR=$(setup_context "$DOMXML" "$DATASTOREFOLDER" \
-    "$ONEDOCK_CONTEXT_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
+    "$ONEDOCK_CONTEXT_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE" \
+    "$ONEDOCK_CONTAINER_FOLDER")
 if [ $? -ne 0 ]; then
     exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "could not setup context for deployment $domain"
@@ -100,7 +102,8 @@ if [ "$PRIV_STR" != "" -a "$ONEDOCK_PRIVILEGED" != "True" ]; then
 fi
 
 NETWORK_STR=$(setup_network "$DOMXML" "$DATASTOREFOLDER" \
-    "$ONEDOCK_NETWORK_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
+    "$ONEDOCK_NETWORK_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE" \
+    "$ONEDOCK_CONTAINER_FOLDER")    
 if [ $? -ne 0 ]; then
     exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "could not setup network for deployment $domain"
