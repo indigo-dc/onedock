@@ -19,7 +19,7 @@
 # Copy the new files to the proper location
 FOLDERS="datastore/onedock im/onedock-probes.d tm/onedock vmm/onedock"
 for F in $FOLDERS; do
-    cp $F/* /var/lib/one/remotes/$F/; done
+    cp $F/* /var/lib/one/remotes/$F/
 done
 FILES="docker-manage-network onedock.sh onedock.conf"
 for F in $FILES; do
