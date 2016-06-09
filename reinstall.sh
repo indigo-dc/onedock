@@ -29,7 +29,9 @@ done
 # Distribute the files in the hosts
 FOLDERS="datastore/onedock im/onedock-probes.d tm/onedock vmm/onedock"
 for F in $FOLDERS; do
-    for i in /var/lib/one/remotes/$F/*; do scpall $i /var/tmp/one/$F/; done
+    for i in /var/lib/one/remotes/$F/*; do
+        scpall $i /var/tmp/one/$F/
+    done
 done
 FILES="docker-manage-network onedock.sh onedock.conf"
 for F in $FILES; do

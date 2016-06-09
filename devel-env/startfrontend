@@ -17,6 +17,7 @@ docker run --name $CONTAINER -h $CONTAINER \
     -v $BASEDIR/etc_one:/etc/one \
     -v $PWD/..:/opt/onedock -id $IMAGENAME /bin/bash
 
-docker exec $CONTAINER groupmod -g $(cat /etc/group | grep docker | awk -F: '{print $3}') docker
+docker exec $CONTAINER groupmod \
+    -g $(cat /etc/group | grep docker | awk -F: '{print $3}') docker
 docker stop $CONTAINER
 docker start $CONTAINER

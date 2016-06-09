@@ -24,6 +24,7 @@ docker exec $FRONTENDNAME bash -c "cat /etc/hosts | sed \"/$IP/d;/$WNNAME/d\" \
     > /tmp/hosts && echo \"$IP $WNNAME\" \
     >> /tmp/hosts && cp /tmp/hosts /etc/"
 
-docker exec $WNNAME groupmod -g $(cat /etc/group | grep docker | awk -F: '{print $3}') docker
+docker exec $WNNAME groupmod \
+    -g $(cat /etc/group | grep docker | awk -F: '{print $3}') docker
 docker stop $WNNAME
 docker start $WNNAME
