@@ -41,9 +41,9 @@ NAME="${XPATH_ELEMENTS[i++]}"
 DN=$(readlink -e ${DRIVER_PATH}/../../docker-manage-network)
 
 if [ ! -e "$DN" ]; then
-    log_onedock_debug "docker-manage-network command does not exist. Please check that \
-    it is properly copied in the /var/lib/one/remotes folder and distributed in the\
-    hosts under the path /var/tmp/one"
+    log_onedock_debug "docker-manage-network command does not exist. Please \
+    check that it is properly copied in the /var/lib/one/remotes folder and \
+    distributed in the hosts under the path /var/tmp/one"
     exit -1
 fi
 
@@ -66,7 +66,8 @@ if [ "$EXISTS" == "false" ] || [ "$EXISTS" == "true" ]; then
 fi
 
 DEVICES_STR=$(setup_devices "$DOMXML" "$DATASTOREFOLDER" \
-    "$ONEDOCK_DEVICES_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
+    "$ONEDOCK_DEVICES_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE" \
+    "$ONEDOCK_CONTAINER_FOLDER")
 if [ $? -ne 0 ]; then
     exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "could not setup devices for deployment $domain"
@@ -74,7 +75,8 @@ if [ $? -ne 0 ]; then
 fi
 
 CONTEXT_STR=$(setup_context "$DOMXML" "$DATASTOREFOLDER" \
-    "$ONEDOCK_CONTEXT_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
+    "$ONEDOCK_CONTEXT_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE" \
+    "$ONEDOCK_CONTAINER_FOLDER")
 if [ $? -ne 0 ]; then
     exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "could not setup context for deployment $domain"
@@ -85,7 +87,8 @@ if [ "$DEVICES_STR" != "" -o "$CONTEXT_STR" != "" ]; then
     DEVICES_STR="$DEVICES_STR --cap-add SYS_ADMIN \
         --security-opt apparmor:unconfined"
 
-    if [ "$(echo "$DEVICES_STR$CONTEXT_STR" | grep -- '--privileged')" != "" ]; then
+    if [ "$(echo "$DEVICES_STR$CONTEXT_STR" | grep -- '--privileged')" \
+        != "" ]; then
         PRIV_STR="--privileged"
         DEVICES_STR=$(echo "$DEVICES_STR" | sed 's/--privileged//g')
         CONTEXT_STR=$(echo "$CONTEXT_STR" | sed 's/--privileged//g')
@@ -100,7 +103,8 @@ if [ "$PRIV_STR" != "" -a "$ONEDOCK_PRIVILEGED" != "True" ]; then
 fi
 
 NETWORK_STR=$(setup_network "$DOMXML" "$DATASTOREFOLDER" \
-    "$ONEDOCK_NETWORK_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE")
+    "$ONEDOCK_NETWORK_FILE" "$ONEDOCK_CLEANUP_FILE" "$ONEDOCK_BOOTSTRAP_FILE" \
+    "$ONEDOCK_CONTAINER_FOLDER")
 if [ $? -ne 0 ]; then
     exec_file "$ONEDOCK_CLEANUP_FILE"
     error_message "could not setup network for deployment $domain"

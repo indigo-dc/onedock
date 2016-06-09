@@ -104,6 +104,7 @@ function setup_devices {
     DEVICES_FILE=$3
     CLEANUP_FILE=$4
     BOOTSTRAP_FILE=$5
+    ONEDOCK_CONTAINER_FOLDER=$6
 
     cat <<EOT > $DEVICES_FILE
 EOT
@@ -159,9 +160,11 @@ function setup_cd {
     CLEANUP_FILE=$3
     BOOTSTRAP_FILE=$4
 
-    if [ "$ONEDOCK_PRIVILEGED" != "True" -a "$ONEDOCK_SKIP_PRIVILEGED" == "True" ]; then
-        log_onedock_debug "Skipping mounting $TARGET because cannot create privileged\
-            containers and I am commited to avoid using it (ONEDOCK_SKIP_PRIVILEGED)"
+    if [ "$ONEDOCK_PRIVILEGED" != "True" \
+        -a "$ONEDOCK_SKIP_PRIVILEGED" == "True" ]; then
+        log_onedock_debug "Skipping mounting $TARGET because cannot create \
+            privileged containers and I am commited to avoid using it \
+            (ONEDOCK_SKIP_PRIVILEGED)"
         return 0
     fi
 
@@ -195,6 +198,7 @@ function setup_context {
     CONTEXT_FILE=$3
     CLEANUP_FILE=$4
     BOOTSTRAP_FILE=$5
+    ONEDOCK_CONTAINER_FOLDER=$6
 
     CONTEXT_STR=
     CONTEXT_DISK="$(echo "$DOMXML" | xmlstarlet sel -t \
@@ -202,15 +206,39 @@ function setup_context {
     DISK_ID= TARGET=
     IFS=';' read DISK_ID TARGET <<< "$CONTEXT_DISK"
 
-    if [ "$DISK_ID" != "" ]; then
-        log_onedock_debug "setup_cd ${FOLDER}/disk.${DISK_ID} \
-            $TARGET $CLEANUP_FILE $BOOTSTRAP_FILE"
-        CONTEXT_STR=$(setup_cd "${FOLDER}/disk.${DISK_ID}" \
-            "$TARGET" "$CLEANUP_FILE" "$BOOTSTRAP_FILE")
-        if [ $? -ne 0 ]; then
-            return 1
-        fi
+    if [ "$DISK_ID" == "" ]; then
+        return 0
     fi
+
+    MOUNTFOLDER=${ONEDOCK_CONTAINER_FOLDER}/disk.${DISK_ID}.mountd
+    ISOFILE=${FOLDER}/disk.${DISK_ID}
+    ISOFILE=$(readlink -f $ISOFILE)
+    LOOP_DEVICE=$(sudo losetup -f --show "$ISOFILE" 2>&1)
+    if [ $? -ne 0 ]; then
+        log_onedock_debug "FAILED: to setup loop device for iso file $ISOFILE"
+        error_message "failed to setup loop device for iso \
+            file $ISOFILE ($LOOP_DEVICE)"
+        return 1
+    fi
+
+    mkdir -p "$MOUNTFOLDER"
+    log_onedock_debug "sudo mount ${LOOP_DEVICE} ${MOUNTFOLDER}"
+    sudo mount "${LOOP_DEVICE}" "${MOUNTFOLDER}"
+    if [ $? -ne 0 ]; then
+        log_onedock_debug "FAILED: to mount $LOOP_DEVICE in $MOUNTFOLDER"
+        error_message "FAILED to mount $LOOP_DEVICE in $MOUNTFOLDER"
+        sudo losetup -d $LOOP_DEVICE
+        return 1
+    fi
+
+    CONTEXT_STR="-v ${LOOP_DEVICE}:/dev/${TARGET} -v ${MOUNTFOLDER}/:/mnt/"
+    # Old mechanism (when not needed privileged containers to mount loop devices)
+    # echo "--privileged --device ${LOOP_DEVICE}:/dev/${TARGET}"
+    cat >> "$CLEANUP_FILE" << EOT
+sudo umount ${MOUNTFOLDER}
+sudo losetup -d $LOOP_DEVICE
+EOT
+
     echo "$CONTEXT_STR"
     return 0
 }
@@ -221,6 +249,7 @@ function setup_network {
     NETWORKFILE=$3
     CLEANUP_FILE=$4
     BOOTSTRAP_FILE=$5
+    ONEDOCK_CONTAINER_FOLDER=$6
 
     cat <<EOT > $NETWORKFILE
 EOT
