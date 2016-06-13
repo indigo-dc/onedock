@@ -284,15 +284,26 @@ EOT
             IFS=';' read C_IP C_MAC C_MASK C_NET C_GW C_DNS <<< "$NET_CONTEXT"
 
             if [ "$C_IP" != "" ]; then
+                if [ "$C_MASK" != "" ]; then
+                    C_IP="${C_IP}/${C_MASK}"
+                else
+                    [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && \
+                        C_IP="${C_IP}/${ONEDOCK_DEFAULT_NETMASK}"
                 IP_STR="--ip $C_IP"
-                [ "$C_MASK" != "" ] && IP_STR="${IP_STR}/${C_MASK}"
-            else
-                # If there is no context for IP address, should we set the IP using DHCP?
-                is_true "$ONEDOCK_DEFAULT_DHCP" && IP_STR="--dhcp"
             fi
 
             [ "$C_MAC" != "" ] && MAC_STR="--mac $C_MAC"
             [ "$C_GW" != "" ] && GW_STR="--gateway $C_GW"
+        fi
+        
+        # If there is a missing value, let's check if we should use DHCP
+        if [ "$IP_STR" == "" -o "$GW_STR" == "" ]; then
+            if [ "$MAC_STR" != "" ]; then
+                if is_true "$ONEDOCK_DEFAULT_DHCP"; then
+                    IP_STR="--dhcp"
+                    GW_STR=
+                fi
+            fi
         fi
         echo "$SUDO $DN --container-name $CONTAINERNAME \
             $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $NETWORKFILE
