@@ -289,6 +289,7 @@ EOT
                 else
                     [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && \
                         C_IP="${C_IP}/${ONEDOCK_DEFAULT_NETMASK}"
+                fi
                 IP_STR="--ip $C_IP"
             fi
 
