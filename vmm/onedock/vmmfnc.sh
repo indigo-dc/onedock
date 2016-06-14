@@ -254,12 +254,15 @@ function setup_network {
     cat <<EOT > $NETWORKFILE
 EOT
     NICS="$(echo "$DOMXML" | xmlstarlet sel -t \
-        -m /VM/TEMPLATE/NIC -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC)" -n)"
+        -m /VM/TEMPLATE/NIC \
+        -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC,';',DNS)" -n)"
+
+    G_DNS_STR=
     for NIC in $NICS; do
         NIC_ID= BRIDGE= IP= MAC=
-        IFS=';' read NIC_ID BRIDGE IP MAC <<< "$NIC"
+        IFS=';' read NIC_ID BRIDGE IP MAC DNS <<< "$NIC"
 
-        MAC_STR= IP_STR= BRIDGE_STR= GW_STR=
+        MAC_STR= IP_STR= BRIDGE_STR= GW_STR= DNS_STR=
 
         NICNAME=eth${NIC_ID}
         NIC_STR="--create-device $NICNAME"
@@ -269,6 +272,11 @@ EOT
             [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && \
                 IP=$IP/$ONEDOCK_DEFAULT_NETMASK
             IP_STR="--ip $IP"
+        fi
+        if [ "$DNS" != "" ]; then
+            for D in $DNS; do
+                DNS_STR="$DNS_STR --dns $D"
+            done
         fi
 
         # Now we get the context for the network, to get the IP address
@@ -284,20 +292,53 @@ EOT
             IFS=';' read C_IP C_MAC C_MASK C_NET C_GW C_DNS <<< "$NET_CONTEXT"
 
             if [ "$C_IP" != "" ]; then
+                if [ "$C_MASK" != "" ]; then
+                    C_IP="${C_IP}/${C_MASK}"
+                else
+                    [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && \
+                        C_IP="${C_IP}/${ONEDOCK_DEFAULT_NETMASK}"
+                fi
                 IP_STR="--ip $C_IP"
-                [ "$C_MASK" != "" ] && IP_STR="${IP_STR}/${C_MASK}"
-            else
-                # If there is no context for IP address, should we set the IP using DHCP?
-                is_true "$ONEDOCK_DEFAULT_DHCP" && IP_STR="--dhcp"
             fi
 
             [ "$C_MAC" != "" ] && MAC_STR="--mac $C_MAC"
             [ "$C_GW" != "" ] && GW_STR="--gateway $C_GW"
+
+            if [ "$C_DNS" != "" ]; then
+                # The context will override the DNS, because it should be
+                # the same that what appears in the CD
+                DNS_STR=
+                for D in $C_DNS; do
+                    DNS_STR="$DNS_STR --dns $D"
+                done
+            fi
+        fi
+
+        if [ "$DNS_STR" != "" ]; then
+            G_DNS_STR="$G_DNS_STR $DNS_STR"
+        fi
+
+        # If there is a missing value, let's check if we should use DHCP
+        if [ "$IP_STR" == "" -o "$GW_STR" == "" ]; then
+            if [ "$MAC_STR" != "" ]; then
+                if is_true "$ONEDOCK_DEFAULT_DHCP"; then
+                    IP_STR="--dhcp"
+                    GW_STR=
+                fi
+            fi
         fi
         echo "$SUDO $DN --container-name $CONTAINERNAME \
             $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $NETWORKFILE
     done
-    echo "--net=\"none\" -h $CONTAINERNAME --add-host $CONTAINERNAME:127.0.1.1"
+
+    if [ "$ONEDOCK_OVERRIDE_DNS" != "" ]; then
+        for D in $ONEDOCK_OVERRIDE_DNS; do
+            G_DNS_STR="$G_DNS_STR --dns $D"
+        done
+    fi
+
+    echo "--net=\"none\" -h $CONTAINERNAME \
+                --add-host $CONTAINERNAME:127.0.1.1 $G_DNS_STR"
     return 0
 }
 
