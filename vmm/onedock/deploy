@@ -131,7 +131,7 @@ if [ $? -eq 0 ]; then
 
     NETCONTEXT="$(
         set -e
-        $(cat "$ONEDOCK_NETWORK_FILE")
+        "$(cat "$ONEDOCK_NETWORK_FILE")"
     )"
     if [ $? -ne 0 ]; then
         docker rm $(docker stop "$CONTAINERNAME")
