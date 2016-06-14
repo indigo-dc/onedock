@@ -254,8 +254,9 @@ function setup_network {
     cat <<EOT > $NETWORKFILE
 EOT
     NICS="$(echo "$DOMXML" | xmlstarlet sel -t \
-        -m /VM/TEMPLATE/NIC -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC,';',DNS)" -n)"
-    
+        -m /VM/TEMPLATE/NIC \
+        -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC,';',DNS)" -n)"
+
     G_DNS_STR=
     for NIC in $NICS; do
         NIC_ID= BRIDGE= IP= MAC=
@@ -316,7 +317,7 @@ EOT
         if [ "$DNS_STR" != "" ]; then
             G_DNS_STR="$G_DNS_STR $DNS_STR"
         fi
-        
+
         # If there is a missing value, let's check if we should use DHCP
         if [ "$IP_STR" == "" -o "$GW_STR" == "" ]; then
             if [ "$MAC_STR" != "" ]; then
