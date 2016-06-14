@@ -254,10 +254,12 @@ function setup_network {
     cat <<EOT > $NETWORKFILE
 EOT
     NICS="$(echo "$DOMXML" | xmlstarlet sel -t \
-        -m /VM/TEMPLATE/NIC -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC)" -n)"
+        -m /VM/TEMPLATE/NIC -v "concat(NIC_ID,';',BRIDGE,';',IP,';',MAC,';',DNS)" -n)"
+    
+    G_DNS_STR=
     for NIC in $NICS; do
         NIC_ID= BRIDGE= IP= MAC=
-        IFS=';' read NIC_ID BRIDGE IP MAC <<< "$NIC"
+        IFS=';' read NIC_ID BRIDGE IP MAC DNS <<< "$NIC"
 
         MAC_STR= IP_STR= BRIDGE_STR= GW_STR= DNS_STR=
 
@@ -269,6 +271,11 @@ EOT
             [ "$ONEDOCK_DEFAULT_NETMASK" != "" ] && \
                 IP=$IP/$ONEDOCK_DEFAULT_NETMASK
             IP_STR="--ip $IP"
+        fi
+        if [ "$DNS" != "" ]; then
+            for D in $DNS; do
+                DNS_STR="$DNS_STR --dns $D"
+            done
         fi
 
         # Now we get the context for the network, to get the IP address
@@ -297,12 +304,19 @@ EOT
             [ "$C_GW" != "" ] && GW_STR="--gateway $C_GW"
 
             if [ "$C_DNS" != "" ]; then
+                # The context will override the DNS, because it should be
+                # the same that what appears in the CD
+                DNS_STR=
                 for D in $C_DNS; do
                     DNS_STR="$DNS_STR --dns $D"
                 done
             fi
         fi
 
+        if [ "$DNS_STR" != "" ]; then
+            G_DNS_STR="$G_DNS_STR $DNS_STR"
+        fi
+        
         # If there is a missing value, let's check if we should use DHCP
         if [ "$IP_STR" == "" -o "$GW_STR" == "" ]; then
             if [ "$MAC_STR" != "" ]; then
@@ -318,12 +332,12 @@ EOT
 
     if [ "$ONEDOCK_OVERRIDE_DNS" != "" ]; then
         for D in $ONEDOCK_OVERRIDE_DNS; do
-            DNS_STR="$DNS_STR --dns $D"
+            G_DNS_STR="$G_DNS_STR --dns $D"
         done
     fi
 
     echo "--net=\"none\" -h $CONTAINERNAME \
-                --add-host $CONTAINERNAME:127.0.1.1  $DNS_STR"
+                --add-host $CONTAINERNAME:127.0.1.1 $G_DNS_STR"
     return 0
 }
 
