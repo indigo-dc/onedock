@@ -211,32 +211,28 @@ function setup_context {
     fi
 
     MOUNTFOLDER=${ONEDOCK_CONTAINER_FOLDER}/disk.${DISK_ID}.mountd
-    ISOFILE=${FOLDER}/disk.${DISK_ID}
-    ISOFILE=$(readlink -f $ISOFILE)
-    LOOP_DEVICE=$(sudo losetup -f --show "$ISOFILE" 2>&1)
-    if [ $? -ne 0 ]; then
-        log_onedock_debug "FAILED: to setup loop device for iso file $ISOFILE"
-        error_message "failed to setup loop device for iso \
-            file $ISOFILE ($LOOP_DEVICE)"
-        return 1
-    fi
+    S_ISOFILE=${FOLDER}/disk.${DISK_ID}
+    S_ISOFILE=$(readlink -f $S_ISOFILE)
+    D_ISOFILE=${ONEDOCK_CONTAINER_FOLDER}/disk.${DISK_ID}
+    D_ISOFILE=$(readlink -f $D_ISOFILE)
+    cp "$S_ISOFILE" "$D_ISOFILE"
 
     mkdir -p "$MOUNTFOLDER"
-    log_onedock_debug "sudo mount ${LOOP_DEVICE} ${MOUNTFOLDER}"
-    sudo mount "${LOOP_DEVICE}" "${MOUNTFOLDER}"
+    log_onedock_debug "sudo mount -o loop ${D_ISOFILE} ${MOUNTFOLDER}"
+    sudo mount -o loop "${D_ISOFILE}" "${MOUNTFOLDER}"
     if [ $? -ne 0 ]; then
-        log_onedock_debug "FAILED: to mount $LOOP_DEVICE in $MOUNTFOLDER"
-        error_message "FAILED to mount $LOOP_DEVICE in $MOUNTFOLDER"
-        sudo losetup -d $LOOP_DEVICE
+        log_onedock_debug "FAILED: to mount $D_ISOFILE in $MOUNTFOLDER"
+        error_message "FAILED to mount $D_ISOFILE in $MOUNTFOLDER"
+        rm -f "${D_ISOFILE}"
         return 1
     fi
 
-    CONTEXT_STR="-v ${LOOP_DEVICE}:/dev/${TARGET} -v ${MOUNTFOLDER}/:/mnt/"
+    CONTEXT_STR="-v ${MOUNTFOLDER}/:/mnt/"
     # Old mechanism (when not needed privileged containers to mount loop devices)
     # echo "--privileged --device ${LOOP_DEVICE}:/dev/${TARGET}"
     cat >> "$CLEANUP_FILE" << EOT
 sudo umount ${MOUNTFOLDER}
-sudo losetup -d $LOOP_DEVICE
+rm -f "${D_ISOFILE}"
 EOT
 
     echo "$CONTEXT_STR"
