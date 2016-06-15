@@ -25,6 +25,9 @@ source ${DRIVER_PATH}/vmmfnc.sh
 
 NAME=$1
 
+log_onedock_debug $(docker stop "$NAME" && docker rm "$NAME")
+ERR=$?
+
 ONEDOCK_CONTAINER_FOLDER=${ONEDOCK_FOLDER}/${NAME}
 mkdir -p "$ONEDOCK_CONTAINER_FOLDER"
 ONEDOCK_CLEANUP_FILE=${ONEDOCK_CONTAINER_FOLDER}/deployment.cleanup
@@ -33,22 +36,6 @@ if [ -e "$ONEDOCK_CLEANUP_FILE" ]; then
     exec_file "$ONEDOCK_CLEANUP_FILE" "Failed to cleanup container ($CLEANUP)"
 fi
 
-#CONTAINER_XML=$(docker inspect "$NAME")
-#DEVICES=$(echo "$CONTAINER_XML" | jq ".[].HostConfig.Devices[].PathOnHost")
-#if [ $? -eq 0 ]; then
-#    for device in $DEVICES; do
-#        devname=${device:1:-1}
-#        if [ "${devname::8}" == "/dev/nbd" ]; then
-#            log_onedock_debug "cleaning up device $devname"
-#            cleanup_disk $devname > /dev/null 2> /dev/null
-#        else
-#            log_onedock_debug "do not how to do with device $device... skipping"
-#        fi
-#    done
-#fi
-
-log_onedock_debug $(docker stop "$NAME" && docker rm "$NAME")
-ERR=$?
 
 # This is just to clean possible snapshots (maybe there are none)
 DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$NAME" "0")
