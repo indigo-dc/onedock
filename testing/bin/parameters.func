@@ -1,0 +1,264 @@
+#!/bin/bash
+#
+# Copyright (C) GRyCAP - I3M - UPV 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+FLAGS=()
+FLAGS_VARS=()
+FLAGS_DEFAULTS=()
+PARAMETERS=()
+PARAMETERS_VARS=()
+PARAMETERS_DEFAULTS=()
+PARAMETERS_MULTI=()
+PARAMETERS_MULTI_VARS=()
+PARAMETERS_EXTRA=()
+PARAMETERS_EXTRA_MAX=-1
+PARAMETERS_TRUE=True
+PARAMETERS_FALSE=False
+PARAMETERS_IGNORE=()
+
+function __max {
+    [ $1 -gt $2 ] && return $1
+    return $2
+}
+
+function parameters_error {
+    while [ $# -gt 0 ]; do
+        echo "$1" >&2
+        shift
+    done
+}
+
+function parameters_exit_error {
+    parameters_error "$@"
+    exit 1
+}
+
+function parameters_usage {
+    local ML=0
+
+    # First we calculate the padding chars
+    PADDING=$(printf "%$(( $1 + 0 ))s" "")
+
+    # Now we calculate the padding for the comments
+    for f in "${FLAGS[@]}"; do
+        __max $ML ${#f}
+        ML=$?
+    done
+    ML=$(($ML+$1))
+
+    # Now we are dumping help about flags
+    local n=0
+    while [ $n -lt ${#FLAGS[@]} ]; do
+        DESC=
+        SUFFIX=
+        if [ "${FLAGS_DESC[$n]}" != "" ]; then
+            SPACES=$(($ML+3))
+            DESC=$(echo "${FLAGS_DESC[$n]}" | fold -s -w $((80 - $ML)) | awk "BEGIN{N=0}{if (N>0) {printf \"$PADDING%${SPACES}s%s\n\", \"\", \$0;N+=1} else {printf \"%s\n\", \$0;N+=1}}")
+            SUFFIX=" - $DESC"
+        fi
+        printf "$PADDING%-${ML}s${SUFFIX}\n" "${FLAGS[$n]}"
+        [ "$SUFFIX" != "" ] && echo
+        n=$(( $n + 1 ))
+    done
+
+    # Finally we dump the help about the parameters
+    n=0
+    while [ $n -lt ${#PARAMETERS[@]} ]; do
+        DESC=
+        SUFFIX=
+        if [ "${PARAMETERS_DESC[$n]}" != "" ]; then
+            SPACES=$(($ML+3))
+            DESC=$(echo "${PARAMETERS_DESC[$n]}" | fold -s -w $((80 - $ML)) | awk "{printf \"$PADDING%${SPACES}s%s\n\", \" \", \$0}")
+            SUFFIX="$DESC"
+        fi
+        printf "$PADDING%s <parameter>\n" "${PARAMETERS[$n]}"
+        echo "${SUFFIX}"
+        [ "$SUFFIX" != "" ] && echo
+        n=$(( $n + 1 ))
+    done
+
+    # Finally we dump the help about the parameters that accept multiple values
+    n=0
+    while [ $n -lt ${#PARAMETERS_MULTI[@]} ]; do
+        DESC=
+        SUFFIX=
+        if [ "${PARAMETERS_MULTI_DESC[$n]}" != "" ]; then
+            SPACES=$(($ML+3))
+            DESC=$(echo "${PARAMETERS_MULTI_DESC[$n]}" | fold -s -w $((80 - $ML)) | awk "{printf \"$PADDING%${SPACES}s%s\n\", \" \", \$0}")
+            SUFFIX="$DESC"
+        fi
+        printf "$PADDING%s <parameter>\n" "${PARAMETERS_MULTI[$n]}"
+        echo "${SUFFIX}"
+        [ "$SUFFIX" != "" ] && echo
+        n=$(( $n + 1 ))
+    done
+}
+
+function get_varname {
+    local PARAM=$1
+    local PARAM_VAR=$2
+    if [ "$PARAM_VAR" == "" ]; then
+        echo "PARAMETERS_$PARAM" | tr -d '-' | tr '[a-z]' '[A-Z]'
+    else
+        echo "$PARAM_VAR"
+    fi
+}
+
+function parameters_read_params {
+    local n
+    local VARNAME
+
+    # Initialize vars
+    PARAMETERS_EXTRA=()
+    n=0
+    while [ $n -lt ${#FLAGS[@]} ]; do
+        VALUE=${FLAGS_DEFAULTS[$n]}
+        [ "$VALUE" == "" ] && VALUE=$PARAMETERS_FALSE
+        read "$(get_varname ${FLAGS[$n]} ${FLAGS_VARS[$n]})" <<<"$VALUE"
+        n=$(( n + 1 ))
+    done
+    n=0
+    while [ $n -lt ${#PARAMETERS[@]} ]; do
+        read "$(get_varname ${PARAMETERS[$n]} ${PARAMETERS_VARS[$n]})" <<<"${PARAMETERS_DEFAULTS[$n]}"
+        # read "${PARAMETERS_VARS[$n]}" <<<"${PARAMETERS_DEFAULTS[$n]}"
+        n=$(( n + 1 ))
+    done
+
+    while [ $n -lt ${#PARAMETERS_MULTI[@]} ]; do
+        declare -a "$(get_varname ${PARAMETERS_MULTI[$n]} ${PARAMETERS_MULTI_VARS[$n]})"
+        n=$(( n + 1 ))
+    done
+
+    # First we break the contractions of single letters i.e. -aq -> -a -q
+    local COMMANDLINE=()
+    while [ $# -gt 0 ]; do
+        if [ "${1:0:1}" == "-" -a "${1:1:1}" != "-" ]; then
+            for f in $(echo "${1:1}" | sed 's/\(.\)/-\1 /g' ); do
+                COMMANDLINE+=("$f")
+            done
+        else
+            COMMANDLINE+=("$1")
+        fi
+        shift
+    done
+
+    # Now parse the parameters to this function
+    local c=0
+    while [ $c -lt ${#COMMANDLINE[@]} ]; do
+        CURRENT=${COMMANDLINE[$c]}
+    # while [ $# -gt 0 ]; do
+        n=0
+        found=0
+        while [ $n -lt ${#FLAGS[@]} -a $found -eq 0 ]; do
+            if [ "$CURRENT" == "${FLAGS[$n]}" ]; then
+                read "$(get_varname ${FLAGS[$n]} ${FLAGS_VARS[$n]})" <<<"$PARAMETERS_TRUE"
+                found=1
+            fi
+            n=$(( $n + 1 ))
+        done
+        n=0
+        while [ $n -lt ${#PARAMETERS[@]} -a $found -eq 0 ]; do
+            CUR_PARAM=$CURRENT
+            IFS='=' read LHS RHS <<<"$CURRENT"
+            if [ "$RHS" != "" ]; then
+                CUR_PARAM=$LHS
+            fi
+            if [ "$CUR_PARAM" == "${PARAMETERS[$n]}" ]; then
+                if [ "$RHS" == "" ]; then
+                    c=$(($c+1))
+                    [ $c -ge ${#COMMANDLINE[@]} ] && echo "missing parameter for ${PARAMETERS[$n]}" && return 1
+                    RHS="${COMMANDLINE[$c]}"
+                fi
+                read "$(get_varname ${PARAMETERS[$n]} ${PARAMETERS_VARS[$n]})" <<<"$RHS"
+                found=1
+            fi
+            n=$(( $n + 1 ))
+        done
+        n=0
+        while [ $n -lt ${#PARAMETERS_MULTI[@]} -a $found -eq 0 ]; do
+            CUR_PARAM=$CURRENT
+            IFS='=' read LHS RHS <<<"$CURRENT"
+            if [ "$RHS" != "" ]; then
+                CUR_PARAM=$LHS
+            fi
+            if [ "$CUR_PARAM" == "${PARAMETERS_MULTI[$n]}" ]; then
+                if [ "$RHS" == "" ]; then
+                    c=$(($c+1))
+                    [ $c -ge ${#COMMANDLINE[@]} ] && echo "missing parameter for ${PARAMETERS_MULTI[$n]}" && return 1
+                    RHS="${COMMANDLINE[$c]}"
+                fi
+                eval "$(get_varname ${PARAMETERS_MULTI[$n]} ${PARAMETERS_MULTI_VARS[$n]})+=($RHS)"
+                found=1
+            fi
+            n=$(( $n + 1 ))
+        done
+        if [ $found -eq 0 ]; then
+            local P_IGNORE
+            local IGNORE_PARAMETER=False
+
+            for P_IGNORE in "${PARAMETERS_IGNORE[@]}"; do
+                if [ "$P_IGNORE" == "$CURRENT" ]; then
+                    IGNORE_PARAMETER=True
+                fi
+            done
+            if [ "$IGNORE_PARAMETER" != "True" ]; then
+                PARAMETERS_EXTRA+=("$CURRENT")
+                if [ $PARAMETERS_EXTRA_MAX -ge 0 ]; then
+                    if [ ${#PARAMETERS_EXTRA[@]} -gt $PARAMETERS_EXTRA_MAX ]; then
+                        parameters_error "too much parameters ($CURRENT)" && return 1
+                    fi
+                fi
+            fi
+        fi
+        # shift
+        c=$(($c+1))
+    done
+
+    # Finalize
+    return 0
+}
+
+function parameters_check_flag_compatible {
+    local SET=$PARAMETERS_FALSE
+    local n
+    while [ $# -gt 0 ]; do
+        for ((n=0;$n<${#FLAGS[@]};n=$n+1)); do
+            if [ "$1" == "${FLAGS[$n]}" -a "${!FLAGS_VARS[$n]}" == "$PARAMETERS_TRUE" ]; then
+                [ "$SET" == "$PARAMETERS_TRUE" ] && return 0
+                SET=$PARAMETERS_TRUE
+            fi
+        done
+        shift
+    done
+    return 1
+}
+
+function debug_dump_variables {
+    local VARNAME
+    for ((n=0;n<${#FLAGS[@]};n++)); do
+        VARNAME=$(get_varname ${FLAGS[$n]} ${FLAGS_VARS[$n]})
+        echo $VARNAME=${!VARNAME}
+    done
+    for ((n=0;n<${#PARAMETERS[@]};n++)); do
+        VARNAME=$(get_varname ${PARAMETERS[$n]} ${PARAMETERS_VARS[$n]})
+        echo $VARNAME=${!VARNAME}
+    done
+    for ((n=0;n<${#PARAMETERS_MULTI[@]};n++)); do
+        VARNAME=$(get_varname ${PARAMETERS_MULTI[$n]} ${PARAMETERS_MULTI_VARS[$n]})
+        echo $VARNAME=${!VARNAME}
+    done
+}
+
