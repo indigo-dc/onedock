@@ -387,8 +387,8 @@ case $OP in
     run)
         PARAMETERS=(--net -h --name)
         PARAMETERS_VARS=(NET HOST NAME)
-        PARAMETERS_MULTI=(--add-host --device -v --cap-add --security-opt )
-        PARAMETERS_MULTI_VARS=(HOSTENT DEVICE DEVICE CAPABILITIES SECOPT)
+        PARAMETERS_MULTI=(--add-host --device -v --cap-add --security-opt --dns)
+        PARAMETERS_MULTI_VARS=(HOSTENT DEVICE DEVICE CAPABILITIES SECOPT DNSS)
         FLAGS=(-t -d --help --privileged)
         FLAGS_VARS=(INTERACTIVE DAEMON HELP PRIVILEGED)
         ;;

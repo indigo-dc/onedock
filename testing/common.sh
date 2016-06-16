@@ -27,11 +27,12 @@ function setUp {
     originalPath=$PATH
     export HOST=unit-tests
     LOCAL_SERVER=$HOST:5000
-    BASEDIR=$(dirname $0)/../
-    export TESTING_LOCATION=$BASEDIR/testing/build
+    CURDIR=$(readlink -f $(dirname $0))
+    BASEDIR=$CURDIR/../
+    export TESTING_LOCATION=$CURDIR/build
     export TESTLOGFILE="$TESTING_LOCATION/test${RANDOM}.logfile"
-    export ONE_LOCATION=$BASEDIR/testing/build/one/
-    export PATH=$BASEDIR/testing/bin/:$TESTING_LOCATION:$PATH
+    export ONE_LOCATION=$TESTING_LOCATION/one/
+    export PATH=$CURDIR/bin/:$TESTING_LOCATION:$PATH
     export ONEDOCK_FOLDER=$ONE_LOCATION/var/tmp/one/
 
     cat > $TESTLOGFILE <<\EOT
