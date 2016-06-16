@@ -20,6 +20,7 @@
 
 source "$(dirname $0)/parameters.func"
 
+PARAMETERS=(-o)
 PARAMETERS_EXTRA_MAX=2
 
 parameters_read_params "$@"
