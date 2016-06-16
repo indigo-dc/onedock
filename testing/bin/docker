@@ -1,0 +1,452 @@
+#!/bin/bash
+#
+# ONEDock - Docker support for ONE (as VMs)
+# Copyright (C) GRyCAP - I3M - UPV 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+[ -e "$TESTLOGFILE" ] && echo "$(basename $0)" "$@" >> "$TESTLOGFILE"
+
+STATS="$(cat <<\EOT
+CONTAINER           CPU %               MEM USAGE / LIMIT     MEM %               NET I/O             BLOCK I/O           PIDS
+%%CONTNAME%%        0.00%               745.5 kB / 8.325 GB   0.01%               0 B / 0 B           20.48 kB / 0 B      1
+EOT
+)"
+
+#        "State": {
+#             "Running": true,
+
+CONTAINER_INSPECT="$(cat <<\EOT
+[
+    {
+        "Id": "67c5de93b1a3744e873ee939c6de2e680b39ac9f1e21d93fbf99c1c897e01b7c",
+        "Created": "2016-06-06T07:51:58.75589964Z",
+        "Path": "/usr/sbin/sshd",
+        "Args": [
+            "-D"
+        ],
+        "State": {
+            "Status": "running",
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 6649,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2016-06-06T07:51:58.927994697Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:3fe248cbe8ec478c0005fa66b960230d758c1ae40ac41a823f7a08aa78f55dc9",
+        "ResolvConfPath": "/var/lib/docker/containers/67c5de93b1a3744e873ee939c6de2e680b39ac9f1e21d93fbf99c1c897e01b7c/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/67c5de93b1a3744e873ee939c6de2e680b39ac9f1e21d93fbf99c1c897e01b7c/hostname",
+        "HostsPath": "/var/lib/docker/containers/67c5de93b1a3744e873ee939c6de2e680b39ac9f1e21d93fbf99c1c897e01b7c/hosts",
+        "LogPath": "/var/lib/docker/containers/67c5de93b1a3744e873ee939c6de2e680b39ac9f1e21d93fbf99c1c897e01b7c/67c5de93b1a3744e873ee939c6de2e680b39ac9f1e21d93fbf99c1c897e01b7c-json.log",
+        "Name": "/%%CONTNAME%%",
+        "RestartCount": 0,
+        "Driver": "aufs",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "unconfined",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "none",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "no",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "CapAdd": [
+                "SYS_ADMIN"
+            ],
+            "CapDrop": null,
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [
+                "%%CONTNAME%%:127.0.1.1"
+            ],
+            "GroupAdd": null,
+            "IpcMode": "",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": [
+                "apparmor:unconfined"
+            ],
+            "StorageOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [
+                {
+                    "PathOnHost": "/dev/nbd0",
+                    "PathInContainer": "/dev/hdc",
+                    "CgroupPermissions": "rwm"
+                }
+            ],
+            "DiskQuota": 0,
+            "KernelMemory": 0,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": -1,
+            "OomKillDisable": false,
+            "PidsLimit": 0,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "BlkioIOps": 0,
+            "BlkioBps": 0,
+            "SandboxSize": 0
+        },
+        "GraphDriver": {
+            "Name": "aufs",
+            "Data": null
+        },
+        "Mounts": [],
+        "Config": {
+            "Hostname": "%%CONTNAME%%",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "22/tcp": {}
+            },
+            "Tty": true,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": [
+                "/usr/sbin/sshd",
+                "-D"
+            ],
+            "Image": "%%CONTNAME%%:0",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": {}
+        },
+        "NetworkSettings": {
+            "Bridge": "",
+            "SandboxID": "8f6f6407228673b3a01fc2a4b86f54f86801e10bfce6a283f7e0a694040d99ea",
+            "HairpinMode": false,
+            "LinkLocalIPv6Address": "",
+            "LinkLocalIPv6PrefixLen": 0,
+            "Ports": {},
+            "SandboxKey": "/var/run/docker/netns/8f6f64072286",
+            "SecondaryIPAddresses": null,
+            "SecondaryIPv6Addresses": null,
+            "EndpointID": "",
+            "Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "",
+            "IPPrefixLen": 0,
+            "IPv6Gateway": "",
+            "MacAddress": "",
+            "Networks": {
+                "none": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "NetworkID": "25506f35102363075d8fe219010ed4bd4cd40f47b6fb440c92b3fce182e5787f",
+                    "EndpointID": "40e655b69e99778cca0cfb983bfa53af0e365702fef1665fdda6d7659ccebd7e",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": ""
+                }
+            }
+        }
+    }
+]
+EOT
+)"
+
+IMAGE_INSPECT="$(cat <<\EOT
+[
+    {
+        "Id": "sha256:3fe248cbe8ec478c0005fa66b960230d758c1ae40ac41a823f7a08aa78f55dc9",
+        "RepoTags": [
+            "dockerimage:0",
+            "dockerimage:3",
+            "one-0:0",
+            "one-10:0",
+            "one-11:0",
+            "%%IMGNAME%%",
+            "one-1:0",
+            "one-6:0",
+            "one-7:0",
+            "one-8:0",
+            "one-9:0",
+            "ubuntu:latest"
+        ],
+        "RepoDigests": [],
+        "Parent": "",
+        "Comment": "",
+        "Created": "2016-05-27T17:33:02.95746036Z",
+        "Container": "a1b0ad737752f07d03c27c2197efda5284c021c1c59733329963a6f836544d40",
+        "ContainerConfig": {
+            "Hostname": "fff5562e8198",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "22/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": [
+                "/bin/sh",
+                "-c",
+                "#(nop) CMD [\"/usr/sbin/sshd\" \"-D\"]"
+            ],
+            "ArgsEscaped": true,
+            "Image": "sha256:bbe75e28464ea63974df1f2f3bf6f4fbc2cd1936ebca94dcdceed710dabe9151",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": [],
+            "Labels": {}
+        },
+        "DockerVersion": "1.11.1",
+        "Author": "Aleksandar Diklic \"https://github.com/ubuntu\"",
+        "Config": {
+            "Hostname": "fff5562e8198",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "22/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": [
+                "/usr/sbin/sshd",
+                "-D"
+            ],
+            "ArgsEscaped": true,
+            "Image": "sha256:bbe75e28464ea63974df1f2f3bf6f4fbc2cd1936ebca94dcdceed710dabe9151",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": [],
+            "Labels": {}
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 251769519,
+        "VirtualSize": 251769519,
+        "GraphDriver": {
+            "Name": "aufs",
+            "Data": null
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:a7e1c363defb1f80633f3688e945754fc4c8f1543f07114befb5e0175d569f4c",
+                "sha256:dc109d4b4ccf69361d29292fb15e52707507b520aba8cd43a564182f26725d74",
+                "sha256:9f7ab087e6e6574225f863b6013579a76bd0c80c92fefe7aea92c4207b6486cb",
+                "sha256:6f8be37bd578bbabe570b0181602971b0ea3509b79a1a3dd5528a4e3fc33dd6f",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+                "sha256:e64dbab37d10f96232403f9b3384e3c39726e913177aee1dc22a51235d25716a",
+                "sha256:13a95826855a3b1ea02744478859803e43e0d38e19e0308452cc02d4b1e232a7",
+                "sha256:e6a60172d1c5e09ce98b6af84339a155098620a6fce1906fa12c44ad0fcfbd5c",
+                "sha256:c5419cae07b28a1048c2fcc864df8de4c3bd52d473b2b32c4aa4b8c38e2e3148",
+                "sha256:3cba1eca3067883e4a0bff575f165a879f9a01aced201145ec2071c705a09508",
+                "sha256:61a89b99e34468afd66cdaf3b19ce3b7915b2f09832d906f43b1766acc0da253"
+            ]
+        }
+    }
+]
+EOT
+)"
+
+source "$(dirname $0)/parameters.func"
+
+PARAMETERS_IGNORE=("2>&1")
+
+function check_name {
+    local SRV
+    local NAME
+    local SRC_NAME
+    local SRC_TAG
+    local SERVER
+    local PORT
+    IFS='/' read SRV NAME <<< $1
+    if [ "$SRV" != "" ]; then
+        IFS=':' read SERVER PORT <<< $SRV
+        if [ "$PORT" == "" ]; then
+            if [ "$NAME" == "" ]; then
+                NAME="$SRV"
+            else
+                NAME="$SRV/$NAME"
+            fi
+            SRV=
+        fi
+    fi
+    [ "$NAME" == "" ] && NAME="$SRV"
+    IFS=':' read SRC_NAME SRC_TAG <<< "$NAME"
+    [ "$SRC_NAME" == "" ] && parameters_error "not valid format for source: $3" && return 1
+    return 0
+}
+
+TAG_NEW=
+OP=$1
+PARAMETERS_EXTRA_MAX=1
+case $OP in
+    pull|rmi|push|stop|rm|restart)
+        ;;
+    exec)
+        PARAMETERS_EXTRA_MAX=-1
+        ;;
+    tag)
+        PARAMETERS=(-f)
+        PARAMETERS_VARS=(TAG_NEW)
+        ;;
+    load)
+        PARAMETERS=(-i)
+        PARAMETERS_VARS=(INPUT_FILE)
+        PARAMETERS_EXTRA_MAX=0
+        ;;
+    inspect)
+        PARAMETERS=(-f --format)
+        PARAMETERS_VARS=(FORMAT FORMAT)
+        PARAMETERS_EXTRA_MAX=-1
+        ;;
+    ps)
+        FLAGS=(-q -a)
+        FLAGS_VARS=(QUIET ALL)
+        PARAMETERS_EXTRA_MAX=0
+        ;;
+    stats)
+        FLAGS=(--no-stream)
+        FLAGS_VARS=(NOSTREAM);;
+    run)
+        PARAMETERS=(--net -h --name)
+        PARAMETERS_VARS=(NET HOST NAME)
+        PARAMETERS_MULTI=(--add-host --device -v --cap-add --security-opt )
+        PARAMETERS_MULTI_VARS=(HOSTENT DEVICE DEVICE CAPABILITIES SECOPT)
+        FLAGS=(-t -d --help --privileged)
+        FLAGS_VARS=(INTERACTIVE DAEMON HELP PRIVILEGED)
+        ;;
+    *)
+        parameters_exit_error "unknown command $OP";;
+esac
+shift
+
+parameters_read_params "$@"
+[ $? -ne 0 ] && parameters_exit_error "ERROR: failed to read parameters"
+
+case $OP in
+    load)
+            [ "$INPUT_FILE" == "" ] && parameters_exit_error "needed a file name";;
+    tag)
+            [ "$TAG_NEW" == "" ] && parameters_exit_error "needed a new tag"
+            check_name "$TAG_NEW" || parameters_exit_error "invalid tag name $TAG_NEW";;
+esac
+
+if [ $PARAMETERS_EXTRA_MAX -gt 0 ]; then
+    if [ ${#PARAMETERS_EXTRA[@]} -ne $PARAMETERS_EXTRA_MAX ]; then
+        parameters_exit_error "fake docker command for testing purposes" "$(parameters_usage 5)"
+    else
+        check_name "${PARAMETERS_EXTRA[0]}" || parameters_exit_error "invalid tag name ${#PARAMETERS_EXTRA[0]}"
+    fi
+fi
+
+IMAGE=True
+case $OP in
+    inspect)
+        for NAME in "${PARAMETERS_EXTRA[@]}"; do
+            # NAME="${PARAMETERS_EXTRA[0]}"
+            IFS=':' read P1 P2 <<<$NAME
+            [ "$P2" == "" ] && IMAGE=False
+            OUTPUT=
+            if [ "$IMAGE" == "True" ]; then
+                OUTPUT=$(echo "$IMAGE_INSPECT" | sed "s/%%IMGNAME%%/${NAME}/")
+            else
+                OUTPUT=$(echo "$CONTAINER_INSPECT" | sed "s/%%CONTNAME%%/${NAME}/")
+            fi
+
+            if [ "$FORMAT" != "" ]; then
+                FMTSTR=".[]$(echo "$FORMAT" | sed 's/^{{\(.*\)}}$/\1/')"
+                OUTPUT=$(echo "$OUTPUT" | jq "$FMTSTR")
+            fi
+            echo "$OUTPUT"
+        done;;
+    stats)
+        [ "$NOSTREAM" != "True" ] && parameters_exit_error "do not know how to work without --no-stream"
+        NAME="${PARAMETERS_EXTRA[0]}"
+        echo "$STATS" | sed "s/%%CONTNAME%%/${NAME}/"
+        ;;
+    ps) # Just to generate a simple example
+        for i in $(seq 0 $(($RANDOM%5))); do
+            echo "one-$(($RANDOM%1000))"
+        done;;
+    run)
+        [ "$HELP" == "True" ] && parameters_usage 5 && exit 0;;
+esac
+
+exit 0

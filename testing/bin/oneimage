@@ -1,0 +1,128 @@
+#!/bin/bash
+#
+# ONEDock - Docker support for ONE (as VMs)
+# Copyright (C) GRyCAP - I3M - UPV
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+[ -e "$TESTLOGFILE" ] && echo "$(basename $0)" "$@" >> "$TESTLOGFILE"
+
+TEMPLATE="<IMAGE>
+    <ID>%%IMGID%%</ID>
+    <UID>0</UID>
+    <GID>0</GID>
+    <UNAME>oneadmin</UNAME>
+    <GNAME>oneadmin</GNAME>
+    <NAME>ubuntu</NAME>
+    <PERMISSIONS>
+        <OWNER_U>1</OWNER_U>
+        <OWNER_M>1</OWNER_M>
+        <OWNER_A>0</OWNER_A>
+        <GROUP_U>0</GROUP_U>
+        <GROUP_M>0</GROUP_M>
+        <GROUP_A>0</GROUP_A>
+        <OTHER_U>0</OTHER_U>
+        <OTHER_M>0</OTHER_M>
+        <OTHER_A>0</OTHER_A>
+    </PERMISSIONS>
+    <TYPE>0</TYPE>
+    <DISK_TYPE>0</DISK_TYPE>
+    <PERSISTENT>0</PERSISTENT>
+    <REGTIME>1464618173</REGTIME>
+    <SOURCE><![CDATA[docker://dockerimage:0]]></SOURCE>
+    <PATH><![CDATA[docker://ubuntu:latest]]></PATH>
+    <FSTYPE><![CDATA[]]></FSTYPE>
+    <SIZE>0</SIZE>
+    <STATE>2</STATE>
+    <RUNNING_VMS>4</RUNNING_VMS>
+    <CLONING_OPS>0</CLONING_OPS>
+    <CLONING_ID>-1</CLONING_ID>
+    <TARGET_SNAPSHOT>-1</TARGET_SNAPSHOT>
+    <DATASTORE_ID>100</DATASTORE_ID>
+    <DATASTORE>onedock</DATASTORE>
+    <VMS>
+        <ID>9</ID>
+        <ID>10</ID>
+        <ID>11</ID>
+        <ID>12</ID>
+    </VMS>
+    <CLONES/>
+    <TEMPLATE>
+        <DESCRIPTION><![CDATA[Ubuntu Trusty with SSHd]]></DESCRIPTION>
+        <DEV_PREFIX><![CDATA[hd]]></DEV_PREFIX>
+    </TEMPLATE>
+    <SNAPSHOTS/>
+</IMAGE>"
+
+TEMPLATE_PLAIN="IMAGE %%IMGID%% INFORMATION
+ID             : %%IMGID%%
+NAME           : ubuntu
+USER           : oneadmin
+GROUP          : oneadmin
+DATASTORE      : onedock
+TYPE           : OS
+REGISTER TIME  : 05/30 14:22:53
+PERSISTENT     : No
+SOURCE         : docker://dockerimage:%%IMGID%%
+PATH           : docker://ubuntu:latest
+SIZE           : 0M
+STATE          : used
+RUNNING_VMS    : 4
+
+PERMISSIONS
+OWNER          : um-
+GROUP          : ---
+OTHER          : ---
+
+IMAGE TEMPLATE
+DESCRIPTION=\"Ubuntu Trusty with SSHd\"
+DEV_PREFIX=\"hd\"
+
+VIRTUAL MACHINES
+
+    ID USER     GROUP    NAME            STAT UCPU    UMEM HOST             TIME
+    9 oneadmin oneadmin container-img   fail    0      0K wn1          5d 00h07
+    10 oneadmin oneadmin container       fail    0      0K wn1          5d 00h06
+    11 oneadmin oneadmin container       fail    0      0K wn1          0d 03h59
+    12 oneadmin oneadmin container       runn    0      0K wn1          0d 03h57"
+
+source "$(dirname $0)/parameters.func"
+
+OP=
+case $1 in
+    show)
+        PARAMETERS_EXTRA_MAX=1
+        OP=show
+        FLAGS=(-x --xml)
+        FLAGS_VARS=(XML XML)
+        FLAGS_DESC=("" "show the values in XML")
+        ;;
+    *)
+        echo "error" && exit 1;;
+esac
+shift
+
+parameters_read_params "$@"
+
+[ ${#PARAMETERS_EXTRA[@]} -ne 1 ] && parameters_exit_error "fake onevm command for testing purposes" "$(parameters_usage 5)"
+
+IMGID=${PARAMETERS_EXTRA[0]}
+case $OP in
+    show)   if [ "$XML" == "True" ]; then
+                echo "$TEMPLATE" | sed "s/%%IMGID%%/$IMGID/g"
+            else
+                echo "$TEMPLATE_PLAIN" | sed "s/%%IMGID%%/$IMGID/g"
+            fi;;
+esac
+
+exit 0

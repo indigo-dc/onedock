@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# ONEDock - Docker support for ONE (as VMs)
+# Copyright (C) GRyCAP - I3M - UPV 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+[ -e "$TESTLOGFILE" ] && echo "$(basename $0)" "$@" >> "$TESTLOGFILE"
+
+source "$(dirname $0)/parameters.func"
+
+PARAMETERS=(-c -d)
+PARAMETERS_VARS=(DEVICE_CONNECT DEVICE_DISCONNECT)
+PARAMETERS_EXTRA_MAX=1
+
+parameters_read_params "$@"
+[ $? -ne 0 ] && parameters_exit_error "ERROR: failed to read parameters"
+
+if [ "$DEVICE_CONNECT" != "" -a "$DEVICE_DISCONNECT" != "" ]; then
+    parameters_exit_error "flags -c and -d are not compatible at once"
+fi
+
+if [ "$DEVICE_CONNECT" != "" ]; then
+    if [ ${#PARAMETERS_EXTRA[@]} -ne 1 ]; then
+        parameters_exit_error "expected the file to which connect"
+    fi
+    exit 0
+fi
+
+if [ "$DEVICE_DISCONNECT" != "" ]; then
+    if [ ${#PARAMETERS_EXTRA[@]} -gt 0 ]; then
+        parameters_exit_error "too much parameters"
+    fi
+    exit 0
+fi
+
+exit 0
