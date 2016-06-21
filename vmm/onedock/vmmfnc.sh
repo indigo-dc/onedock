@@ -247,6 +247,8 @@ function setup_network {
     BOOTSTRAP_FILE=$5
     ONEDOCK_CONTAINER_FOLDER=$6
 
+    CONTNAME="one-$(echo "$DOMXML" | xmlstarlet sel -t -v /VM/ID)"
+    
     cat <<EOT > $NETWORKFILE
 EOT
     NICS="$(echo "$DOMXML" | xmlstarlet sel -t \
@@ -262,6 +264,7 @@ EOT
 
         NICNAME=eth${NIC_ID}
         NIC_STR="--create-device $NICNAME"
+        NIC_STR_UPDATE="--update-device $NICNAME"
         [ "$BRIDGE" != "" ] && BRIDGE_STR="--bridge $BRIDGE"
         [ "$MAC" != "" ] && MAC_STR="--mac $MAC"
         if [ "$IP" != "" ]; then
@@ -315,16 +318,25 @@ EOT
         fi
 
         # If there is a missing value, let's check if we should use DHCP
+        USING_DHCP=False
         if [ "$IP_STR" == "" -o "$GW_STR" == "" ]; then
             if [ "$MAC_STR" != "" ]; then
                 if is_true "$ONEDOCK_DEFAULT_DHCP"; then
-                    IP_STR="--dhcp"
+                    USING_DHCP=True
+                    IP_STR="--dhcp /var/run/dhclient.$CONTNAME-$NICNAME.pid"
+                    IP_STR2="--release-dhcp /var/run/dhclient.$CONTNAME-$NICNAME.pid"
+                    # IP_STR="--dhcp"
                     GW_STR=
                 fi
             fi
         fi
         echo "$SUDO $DN --container-name $CONTAINERNAME \
             $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $NETWORKFILE
+
+        if [ "$USING_DHCP" == "True" ]; then        
+            echo "$SUDO $DN --container-name $CONTAINERNAME \
+                $BRIDGE_STR $IP_STR2 $NIC_STR_UPDATE" >> $CLEANUP_FILE
+        fi
     done
 
     if [ "$ONEDOCK_OVERRIDE_DNS" != "" ]; then
