@@ -25,9 +25,6 @@ source ${DRIVER_PATH}/vmmfnc.sh
 
 NAME=$1
 
-log_onedock_debug $(docker stop "$NAME" && docker rm "$NAME")
-ERR=$?
-
 ONEDOCK_CONTAINER_FOLDER=${ONEDOCK_FOLDER}/${NAME}
 mkdir -p "$ONEDOCK_CONTAINER_FOLDER"
 ONEDOCK_CLEANUP_FILE=${ONEDOCK_CONTAINER_FOLDER}/deployment.cleanup
@@ -36,6 +33,8 @@ if [ -e "$ONEDOCK_CLEANUP_FILE" ]; then
     exec_file "$ONEDOCK_CLEANUP_FILE" "Failed to cleanup container ($CLEANUP)"
 fi
 
+log_onedock_debug $(docker stop "$NAME" && docker rm "$NAME")
+ERR=$?
 
 # This is just to clean possible snapshots (maybe there are none)
 DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$NAME" "0")
