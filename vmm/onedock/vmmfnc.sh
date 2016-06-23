@@ -248,7 +248,7 @@ function setup_network {
     ONEDOCK_CONTAINER_FOLDER=$6
 
     CONTNAME="one-$(echo "$DOMXML" | xmlstarlet sel -t -v /VM/ID)"
-    
+
     cat <<EOT > $NETWORKFILE
 EOT
     NICS="$(echo "$DOMXML" | xmlstarlet sel -t \
@@ -333,7 +333,7 @@ EOT
         echo "$SUDO $DN --container-name $CONTAINERNAME \
             $BRIDGE_STR $MAC_STR $IP_STR $NIC_STR $GW_STR" >> $NETWORKFILE
 
-        if [ "$USING_DHCP" == "True" ]; then        
+        if [ "$USING_DHCP" == "True" ]; then
             echo "$SUDO $DN --container-name $CONTAINERNAME \
                 $BRIDGE_STR $IP_STR2 $NIC_STR_UPDATE" >> $CLEANUP_FILE
         fi
