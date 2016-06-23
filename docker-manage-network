@@ -159,6 +159,10 @@ function create_device {
     ip link set dev $VETH0 up
     ip netns exec $NSDOCK ip link set dev $VETH1 name $DEVNAME
     ip netns exec $NSDOCK ip link set dev $DEVNAME up
+    ip netns exec $NSDOCK sysctl net.ipv6.conf.all.disable_ipv6=1
+    ip netns exec $NSDOCK sysctl net.ipv6.conf.default.disable_ipv6=1
+    ip netns exec $NSDOCK sysctl net.ipv6.conf.lo.disable_ipv6=1
+
     set +e
     log_debug "device $DEVNAME created in container $DOCKID \
         and attached to bridge $BRNAME"
@@ -244,16 +248,32 @@ function get_ip_dhcp {
 
     DOCKID=$1
     DEVNAME=$2
-    set +u
-    DHCP=$3
-    [ "$DHCP" == "" ] && DHCP=dhclient
-    set -u
+    PIDFILE=$3
 
     NSDOCK=$(build_ns $DOCKID)
     set -e
-    ip netns exec $NSDOCK dhclient $DEVNAME -nw
+    ip netns exec $NSDOCK dhclient $DEVNAME -nw -pf "$PIDFILE"
     set +e
     log_debug "dhcp client launched for device $DEVNAME in container $DOCKID"
+}
+
+function release_dhcp {
+    # 
+    # @Syntax: get_ip_dhcp $1 $2 $3 (default=dhclient) ]
+    #
+    # This function launches a dhcp client stated in $3 (optional parameter which defaults to dhclient) for device $2 in container $1
+    #   * NOTE: the current parameters for the dhcp client are only tested for dhclient.
+    #
+
+    DOCKID=$1
+    DEVNAME=$2
+    PIDFILE=$3
+
+    NSDOCK=$(build_ns $DOCKID)
+    set -e
+    ip netns exec $NSDOCK dhclient $DEVNAME -r -pf "$PIDFILE"
+    set +e
+    log_debug "dhcp client killed for device $DEVNAME in container $DOCKID"
 }
 
 function read_param {
@@ -338,7 +358,9 @@ MACADDR=
 DHCP=no
 CLEAN_NAMESPACES=no
 GW=
+DHCPPIDFILE=
 
+RELEASEDHCP=False
 CREATE=False
 UPDATE=False
 DELETE=False
@@ -384,9 +406,16 @@ while [ $# -gt 0 ]; do
                         exit_on_error "missing parameter for --mac"
                         shift;;
     --ip|-i)                read_param IPADDR $@
-                        exit_on_error "missing paramter for --ip"
+                        exit_on_error "missing parameter for --ip"
                         shift;;
-    --dhcp)                 DHCP=yes;;
+    --dhcp)             DHCP=yes
+                        read_param DHCPPIDFILE $@
+                        exit_on_error "missing parameter for --dhcp"
+                        shift;;
+    --release-dhcp)     RELEASEDHCP=yes
+                        read_param DHCPPIDFILE $@
+                        exit_on_error "missing parameter for --release-dhcp"
+                        shift;;
     --gateway|-g)           read_param GW $@
                         exit_on_error "missing parameter for --gateway"
                         shift;;
@@ -427,9 +456,16 @@ if is_true $CREATE; then
     create_device $ID $BRIDGENAME $DEVICENAME
 fi
 
+if is_true $UPDATE; then
+    if is_true $RELEASEDHCP; then
+        UPDATE=False
+        release_dhcp $ID "$DEVICENAME" "$DHCPPIDFILE"
+    fi
+fi
+
 if is_true $CREATE || is_true $UPDATE; then
     [ "$MACADDR" != "" ] && assign_mac $ID "$DEVICENAME" "$MACADDR"
-    [ "$DHCP" == "yes" ] && get_ip_dhcp $ID "$DEVICENAME"
+    [ "$DHCP" == "yes" ] && get_ip_dhcp $ID "$DEVICENAME" "$DHCPPIDFILE"
     [ "$IPADDR" != "" ] && assign_ip $ID "$DEVICENAME" "$IPADDR"
     [ "$GW" != "" ] && assign_gw $ID "$DEVICENAME" "$GW"
 fi
