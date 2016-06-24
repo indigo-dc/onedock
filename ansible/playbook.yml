@@ -1,0 +1,26 @@
+---
+- hosts: localhost
+  connection: local
+
+  tasks:
+
+  - name: Install git
+    apt: name=git update_cache=yes
+
+  - name: Clone onedock
+    git: repo=https://github.com/indigo-dc/onedock dest=/tmp/onedock
+
+  - name: Install ONE
+    command: /tmp/onedock/install/ubuntu/install-one
+
+  - name: Install docker
+    command: /tmp/onedock/install/ubuntu/install-docker
+
+  - name: Install docker registry
+    command: /tmp/onedock/install/ubuntu/install-registry
+
+  - name: Launch docker registry
+    command: /tmp/onedock/install/ubuntu/launch-registry
+
+  - name: Install OneDock
+    command: /tmp/onedock/install/ubuntu/install-onedock
