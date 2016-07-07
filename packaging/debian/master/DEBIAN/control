@@ -1,0 +1,12 @@
+Package: onedock-master
+Version: 1.0-1
+Section: unknown
+Priority: extra
+Architecture: all
+Depends: opennebula (= 4.12.3+dfsg-3build1), xmlstarlet (>= 1.5.0-1), mount, jq (>= 1.3-1.1ubuntu1), qemu-utils
+Maintainer: Indigo DC Project (https://github.com/indigo-dc/onedock)
+Description: ONEDock
+ ONEDock is a set of extensions for OpenNebula to use containers as 
+ if they were virtual machines (VM).
+ The concept of ONEDock is to configure Docker to act as an hypervisor. 
+ It behaves just as KVM does in the context of OpenNebula.
