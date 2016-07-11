@@ -31,8 +31,8 @@ copy_files
 cd ./dist
 tar cfz ${BUILD_PKG}.tar.gz ${BUILD_PKG}
 cd -
-rpmbuild --bb onedock-master.spec --clean --define "_sourcedir $PWD/dist/"
-rpmbuild --bb onedock-node.spec
+rpmbuild --bb onedock-master.spec --clean --define "_sourcedir $PWD/dist/" --define "_topdir $PWD/dist/"
+rpmbuild --bb onedock-node.spec --define "_topdir $PWD/dist/"
 
 #BUILD_PKG=${APP}_${VERSION}_node
 #mkdir -p ./dist/$BUILD_PKG/
