@@ -56,7 +56,7 @@ else
 fi
 
 LOCALDOCKNAME=$(build_dock_name "$LOCAL_SERVER" "" "$IMAGE_BASENAME" "$ID")
-onedock_exec_and_log "docker tag -f $DOCKNAME $LOCALDOCKNAME" \
+onedock_exec_and_log "docker tag $DOCKNAME $LOCALDOCKNAME" \
     "Error creating tag $LOCALDOCKNAME for image $DOCKNAME in local repository"
 if [ "$LOCAL_SERVER" == "" ]; then
     log_onedock_debug "WARNING: LOCAL_SERVER is not set: \
