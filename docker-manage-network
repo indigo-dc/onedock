@@ -232,9 +232,9 @@ function assign_gw {
     GW=$3
 
     NSDOCK=$(build_ns $DOCKID)
-    set -e
+    # set -e
     ip netns exec $NSDOCK ip route add dev $DEVNAME default via $GW
-    set +e
+    # set +e
     log_debug "gateway $GW set as default for $DEVNAME in container $DOCKID"
 }
 
