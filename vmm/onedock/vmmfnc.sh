@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ONEDock - Docker support for ONE (as VMs)
-# Copyright (C) GRyCAP - I3M - UPV 
+# Copyright (C) GRyCAP - I3M - UPV
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ EOT
         DISK_ID= TARGET= TYPE=
         IFS=';' read DISK_ID TARGET TYPE <<< "$DISK"
 
-        # We'll skip disk 0, because it is the docker image        
+        # We'll skip disk 0, because it is the docker image
         [ "$DISK_ID" == "0" ] && continue
 
         RESULT=0
@@ -324,7 +324,8 @@ EOT
                 if is_true "$ONEDOCK_DEFAULT_DHCP"; then
                     USING_DHCP=True
                     IP_STR="--dhcp /var/run/dhclient.$CONTNAME-$NICNAME.pid"
-                    IP_STR2="--release-dhcp /var/run/dhclient.$CONTNAME-$NICNAME.pid"
+                    IP_STR2="--release-dhcp /var/run/dhclient.\
+                    $CONTNAME-$NICNAME.pid"
                     # IP_STR="--dhcp"
                     GW_STR=
                 fi

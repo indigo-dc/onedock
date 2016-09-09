@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ONEDock - Docker support for ONE (as VMs)
-# Copyright (C) GRyCAP - I3M - UPV 
+# Copyright (C) GRyCAP - I3M - UPV
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,9 @@ cp $BASEDIR/docker-manage-network /var/lib/one/remotes/
 
 if [ ! -e /var/lib/one/remotes/onedock.conf ]; then
     cp onedock.conf /var/lib/one/remotes/onedock.conf
-    sed -i.bkp -e "s/export LOCAL_SERVER=.*/export LOCAL_SERVER=$(hostname):5000/g" /var/lib/one/remotes/onedock.conf
+    sed -i.bkp -e \
+    "s/export LOCAL_SERVER=.*/export LOCAL_SERVER=$(hostname):5000/g" \
+    /var/lib/one/remotes/onedock.conf
 else
 echo "Configuration file /var/lib/one/remotes/onedock.conf exists. \
     Please check that the variables are properly set."

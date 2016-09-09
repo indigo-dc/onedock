@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ONEDock - Docker support for ONE (as VMs)
-# Copyright (C) GRyCAP - I3M - UPV 
+# Copyright (C) GRyCAP - I3M - UPV
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -60,7 +60,88 @@ function tearDown {
     rm -f $TESTLOGFILE
 }
 
-DSACTION_TEMPLATE_PLAINTXT='<DS_DRIVER_ACTION_DATA><IMAGE><ID>0</ID><UID>0</UID><GID>0</GID><UNAME>oneadmin</UNAME><GNAME>oneadmin</GNAME><NAME>ubuntu</NAME><PERMISSIONS><OWNER_U>1</OWNER_U><OWNER_M>1</OWNER_M><OWNER_A>0</OWNER_A><GROUP_U>0</GROUP_U><GROUP_M>0</GROUP_M><GROUP_A>0</GROUP_A><OTHER_U>0</OTHER_U><OTHER_M>0</OTHER_M><OTHER_A>0</OTHER_A></PERMISSIONS><TYPE>0</TYPE><DISK_TYPE>0</DISK_TYPE><PERSISTENT>0</PERSISTENT><REGTIME>1464618173</REGTIME><SOURCE><![CDATA[]]></SOURCE><PATH><![CDATA[%%PATH%%]]></PATH><FSTYPE><![CDATA[]]></FSTYPE><SIZE>0</SIZE><STATE>4</STATE><RUNNING_VMS>0</RUNNING_VMS><CLONING_OPS>0</CLONING_OPS><CLONING_ID>-1</CLONING_ID><TARGET_SNAPSHOT>-1</TARGET_SNAPSHOT><DATASTORE_ID>100</DATASTORE_ID><DATASTORE>onedock</DATASTORE><VMS></VMS><CLONES></CLONES><TEMPLATE><DESCRIPTION><![CDATA[Ubuntu Trusty with SSHd]]></DESCRIPTION><DEV_PREFIX><![CDATA[hd]]></DEV_PREFIX></TEMPLATE><SNAPSHOTS></SNAPSHOTS></IMAGE><DATASTORE><ID>100</ID><UID>0</UID><GID>0</GID><UNAME>oneadmin</UNAME><GNAME>oneadmin</GNAME><NAME>onedock</NAME><PERMISSIONS><OWNER_U>1</OWNER_U><OWNER_M>1</OWNER_M><OWNER_A>0</OWNER_A><GROUP_U>1</GROUP_U><GROUP_M>0</GROUP_M><GROUP_A>0</GROUP_A><OTHER_U>0</OTHER_U><OTHER_M>0</OTHER_M><OTHER_A>0</OTHER_A></PERMISSIONS><DS_MAD><![CDATA[onedock]]></DS_MAD><TM_MAD><![CDATA[onedock]]></TM_MAD><BASE_PATH><![CDATA[/var/lib/one//datastores/100]]></BASE_PATH><TYPE>0</TYPE><DISK_TYPE>0</DISK_TYPE><STATE>0</STATE><CLUSTER_ID>-1</CLUSTER_ID><CLUSTER></CLUSTER><TOTAL_MB>64</TOTAL_MB><FREE_MB>64</FREE_MB><USED_MB>0</USED_MB><IMAGES></IMAGES><TEMPLATE><BASE_PATH><![CDATA[/var/lib/one//datastores/]]></BASE_PATH><CLONE_TARGET><![CDATA[SYSTEM]]></CLONE_TARGET><DISK_TYPE><![CDATA[FILE]]></DISK_TYPE><DS_MAD><![CDATA[onedock]]></DS_MAD><LN_TARGET><![CDATA[SYSTEM]]></LN_TARGET><TM_MAD><![CDATA[onedock]]></TM_MAD></TEMPLATE></DATASTORE></DS_DRIVER_ACTION_DATA>'
+DSACTION_TEMPLATE_PLAINTXT='<DS_DRIVER_ACTION_DATA>
+    <IMAGE>
+        <ID>0</ID>
+        <UID>0</UID>
+        <GID>0</GID>
+        <UNAME>oneadmin</UNAME>
+        <GNAME>oneadmin</GNAME>
+        <NAME>ubuntu</NAME>
+        <PERMISSIONS>
+            <OWNER_U>1</OWNER_U>
+            <OWNER_M>1</OWNER_M>
+            <OWNER_A>0</OWNER_A>
+            <GROUP_U>0</GROUP_U>
+            <GROUP_M>0</GROUP_M>
+            <GROUP_A>0</GROUP_A>
+            <OTHER_U>0</OTHER_U>
+            <OTHER_M>0</OTHER_M>
+            <OTHER_A>0</OTHER_A>
+        </PERMISSIONS>
+        <TYPE>0</TYPE>
+        <DISK_TYPE>0</DISK_TYPE>
+        <PERSISTENT>0</PERSISTENT>
+        <REGTIME>1464618173</REGTIME>
+        <SOURCE><![CDATA[]]></SOURCE>
+        <PATH><![CDATA[%%PATH%%]]></PATH
+        ><FSTYPE><![CDATA[]]></FSTYPE>
+        <SIZE>0</SIZE>
+        <STATE>4</STATE>
+        <RUNNING_VMS>0</RUNNING_VMS>
+        <CLONING_OPS>0</CLONING_OPS>
+        <CLONING_ID>-1</CLONING_ID>
+        <TARGET_SNAPSHOT>-1</TARGET_SNAPSHOT>
+        <DATASTORE_ID>100</DATASTORE_ID>
+        <DATASTORE>onedock</DATASTORE>
+        <VMS></VMS>
+        <CLONES></CLONES>
+        <TEMPLATE>
+            <DESCRIPTION><![CDATA[Ubuntu Trusty with SSHd]]></DESCRIPTION>
+            <DEV_PREFIX><![CDATA[hd]]></DEV_PREFIX>
+        </TEMPLATE>
+        <SNAPSHOTS></SNAPSHOTS>
+    </IMAGE>
+    <DATASTORE>
+        <ID>100</ID>
+        <UID>0</UID>
+        <GID>0</GID>
+        <UNAME>oneadmin</UNAME>
+        <GNAME>oneadmin</GNAME>
+        <NAME>onedock</NAME>
+        <PERMISSIONS>
+            <OWNER_U>1</OWNER_U>
+            <OWNER_M>1</OWNER_M>
+            <OWNER_A>0</OWNER_A>
+            <GROUP_U>1</GROUP_U>
+            <GROUP_M>0</GROUP_M>
+            <GROUP_A>0</GROUP_A>
+            <OTHER_U>0</OTHER_U>
+            <OTHER_M>0</OTHER_M>
+            <OTHER_A>0</OTHER_A>
+        </PERMISSIONS>
+        <DS_MAD><![CDATA[onedock]]></DS_MAD>
+        <TM_MAD><![CDATA[onedock]]></TM_MAD>
+        <BASE_PATH><![CDATA[/var/lib/one//datastores/100]]></BASE_PATH>
+        <TYPE>0</TYPE>
+        <DISK_TYPE>0</DISK_TYPE>
+        <STATE>0</STATE>
+        <CLUSTER_ID>-1</CLUSTER_ID>
+        <CLUSTER></CLUSTER>
+        <TOTAL_MB>64</TOTAL_MB>
+        <FREE_MB>64</FREE_MB>
+        <USED_MB>0</USED_MB>
+        <IMAGES></IMAGES>
+        <TEMPLATE>
+            <BASE_PATH><![CDATA[/var/lib/one//datastores/]]></BASE_PATH>
+            <CLONE_TARGET><![CDATA[SYSTEM]]></CLONE_TARGET>
+            <DISK_TYPE><![CDATA[FILE]]></DISK_TYPE>
+            <DS_MAD><![CDATA[onedock]]></DS_MAD>
+            <LN_TARGET><![CDATA[SYSTEM]]></LN_TARGET>
+            <TM_MAD><![CDATA[onedock]]></TM_MAD>
+        </TEMPLATE>
+    </DATASTORE>
+</DS_DRIVER_ACTION_DATA>'
 
 VM_TEMPLATE_PLAINTXT='<VM>
     <ID>%%VMID%%</ID>
@@ -91,7 +172,8 @@ VM_TEMPLATE_PLAINTXT='<VM>
     <DEPLOY_ID/>
     <MONITORING/>
     <TEMPLATE>
-        <AUTOMATIC_REQUIREMENTS><![CDATA[!(PUBLIC_CLOUD = YES)]]></AUTOMATIC_REQUIREMENTS>
+        <AUTOMATIC_REQUIREMENTS><![CDATA[!(PUBLIC_CLOUD = YES)]]>
+        </AUTOMATIC_REQUIREMENTS>
         <CONTEXT>
             <DISK_ID><![CDATA[2]]></DISK_ID>
             <ETH0_IP><![CDATA[172.17.10.5]]></ETH0_IP>

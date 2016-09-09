@@ -71,8 +71,7 @@ SCRIPT_NAME=`basename $0`
 
 # Takes out unneeded slashes. Repeated and final directory slashes:
 # /some//path///somewhere/ -> /some/path/somewhere
-function fix_dir_slashes
-{
+function fix_dir_slashes {
     dirname "$1/file" | $SED 's/\/+/\//g'
 }
 
@@ -81,45 +80,38 @@ function fix_dir_slashes
 # ------------------------------------------------------------------------------
 
 # Formats date for logs
-function log_date
-{
+function log_date {
     $DATE +"%a %b %d %T %Y"
 }
 
 # Logs a message, alias to log_info
-function log
-{
+function log {
     log_info "$1"
 }
 
 # Log function that knows how to deal with severities and adds the
 # script name
-function log_function
-{
+function log_function {
     echo "$1: $SCRIPT_NAME: $2" 1>&2
 }
 
 # Logs an info message
-function log_info
-{
+function log_info {
     log_function "INFO" "$1"
 }
 
 # Logs an error message
-function log_error
-{
+function log_error {
     log_function "ERROR" "$1"
 }
 
 # Logs a debug message
-function log_debug
-{
+function log_debug {
     log_function "DEBUG" "$1"
 }
 
 # This function is used to pass error message to the mad
-function error_message
-{
+function error_message {
     (
         echo "ERROR MESSAGE --8<------"
         echo "$1"
@@ -130,8 +122,7 @@ function error_message
 # Executes a command, if it fails returns error message and exits
 # If a second parameter is present it is used as the error message when
 # the command fails
-function exec_and_log
-{
+function exec_and_log {
     message=$2
 
     EXEC_LOG_ERR=`$1 2>&1 1>/dev/null`
@@ -152,8 +143,7 @@ function exec_and_log
 # This function executes $1 and returns stdout
 # If a second parameter is present it is used as the error message when
 # the command fails
-function monitor_and_log
-{
+function monitor_and_log {
     EXEC_OUT=`bash -s 2>/dev/null <<EOF
 export LANG=C
 export LC_ALL=C
@@ -180,8 +170,7 @@ EOF`
 # exec_and_log, except that it allows multiline commands.
 # If a second parameter is present it is used as the error message when
 # the command fails.
-function multiline_exec_and_log
-{
+function multiline_exec_and_log {
     message=$2
 
     EXEC_LOG_ERR=`bash -s 2>&1 1>/dev/null <<EOF
@@ -205,8 +194,7 @@ EOF`
 
 # Like exec_and_log but does not exit on failure. Just sets the variable
 # ERROR to the error message.
-function exec_and_set_error
-{
+function exec_and_set_error {
     message=$2
 
     EXEC_LOG_ERR=$(bash -c "$1" 2>&1 1>/dev/null)
@@ -230,8 +218,7 @@ function exec_and_set_error
 #
 # NOTE: if the command is killed because a timeout the exit code
 # will be 143 = 128+15 (SIGHUP)
-function timeout_exec_and_log
-{
+function timeout_exec_and_log {
     TIMEOUT=$1
     shift
 
@@ -268,8 +255,7 @@ function timeout_exec_and_log
 # Parameters are times (seconds) and monitoring command (or function).
 # Executes monitoring command until it is successful (VM is no longer
 # running) or the timeout is reached.
-function retry
-{
+function retry {
     times=$1
     function=$2
 
@@ -365,8 +351,7 @@ function mkfs_command {
 }
 
 #This function executes $2 at $1 host and report error $3
-function ssh_exec_and_log
-{
+function ssh_exec_and_log {
     SSH_EXEC_ERR=`$SSH $1 sh -s 2>&1 1>/dev/null <<EOF
 export LANG=C
 export LC_ALL=C
@@ -392,8 +377,7 @@ EOF`
 # $2: COMMAND
 # $3: file to be loaded into the script
 # $4: ERROR_REPORT
-function ssh_exec_and_log_stdin
-{
+function ssh_exec_and_log_stdin {
     SSH_EXEC_ERR=`$SSH $1 sh -s 2>&1 1>/dev/null <<EOF
 export LANG=C
 export LC_ALL=C
@@ -420,8 +404,7 @@ EOF`
 # This function executes $2 at $1 host and returns stdout
 # If $3 is present, it is used as the error message when
 # the command fails
-function ssh_monitor_and_log
-{
+function ssh_monitor_and_log {
     SSH_EXEC_OUT=`$SSH $1 sh -s 2>/dev/null <<EOF
 export LANG=C
 export LC_ALL=C
@@ -444,8 +427,7 @@ EOF`
 }
 
 #Creates path ($2) at $1
-function ssh_make_path
-{
+function ssh_make_path {
     SSH_EXEC_ERR=`$SSH $1 sh -s 2>&1 1>/dev/null <<EOF
 if [ ! -d $2 ]; then
    mkdir -p $2

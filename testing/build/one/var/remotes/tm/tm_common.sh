@@ -38,21 +38,18 @@ ONE_SH=$ONE_LIB/sh
 # ------------------------------------------------------------------------------
 
 # Gets the host from an argument
-function arg_host
-{
+function arg_host {
     echo $1 | $SED 's/^([^:]*):.*$/\1/'
 }
 
 # Gets the path from an argument
-function arg_path
-{
+function arg_path {
     ARG_PATH=`echo $1 | $SED 's/^[^:]*:(.*)$/\1/'`
     fix_dir_slashes "$ARG_PATH"
 }
 
 #Return 1 if the first argument is a disk
-function is_disk
-{
+function is_disk {
     echo "$1" | $GREP '/disk\.[0-9]\+' > /dev/null 2>&1
 
     if [ $? -eq 0 ]; then
@@ -78,8 +75,7 @@ function make_relative {
 }
 
 #Return DISK_TYPE
-function disk_type
-{
+function disk_type {
     # Let's check if it is a CDROM
     DISK_ID=$(echo "$DST_PATH" | $AWK -F. '{print $NF}')
     XPATH="${ONE_LOCAL_VAR}/remotes/datastore/xpath.rb --stdin"
