@@ -131,6 +131,29 @@ apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
 <a name="front-u-install" />
 ### Installation of ONEDock and activating it in ONE
 
+#### From package
+You have to enable the INDIGO - DataCloud packages repositories. See full instructions
+[here](https://indigo-dc.gitbooks.io/indigo-datacloud-releases/content/generic_installation_and_configuration_guide_1.html#id4). Briefly you have to download the list file from [INDIGO SW Repository](http://repo.indigo-datacloud.eu/repos/1/indigo1-ubuntu14_04.list) in your /etc/apt/sources.list.d folder.
+
+```sh
+$ cd /etc/apt/sources.list.d
+$ wget http://repo.indigo-datacloud.eu/repos/1/indigo1-ubuntu14_04.list
+```
+
+And then install the GPG key for INDIGO the repository:
+
+```sh
+$ wget -q -O - http://repo.indigo-datacloud.eu/repository/RPM-GPG-KEY-indigodc | sudo apt-key add -
+```
+
+Finally install the Onedock package.
+
+```sh
+$ apt update
+$ apt install onedock
+```
+
+#### From source code
 Once OpenNebula, Docker, a Docker Registry and the required packages have been installed, you can install ONEDock as follows (as root user):
 
 ```bash
@@ -327,6 +350,36 @@ yum -y install jq xmlstarlet
 ```
 <a name="front-c-install" />
 ### Installation of ONEDock and activating it in ONE
+
+### From package
+
+You must have the epel repository enabled:
+
+```sh
+$ yum install epel-release
+```
+
+Then you have to enable the INDIGO - DataCloud packages repositories. See full instructions
+[here](https://indigo-dc.gitbooks.io/indigo-datacloud-releases/content/generic_installation_and_configuration_guide_1.html#id4). Briefly you have to download the repo file from [INDIGO SW Repository](http://repo.indigo-datacloud.eu/repos/1/indigo1.repo) in your /etc/yum.repos.d folder.
+
+```sh
+$ cd /etc/yum.repos.d
+$ wget http://repo.indigo-datacloud.eu/repos/1/indigo1.repo
+```
+
+And then install the GPG key for the INDIGO repository:
+
+```sh
+$ rpm --import http://repo.indigo-datacloud.eu/repository/RPM-GPG-KEY-indigodc
+```
+
+Finally install the Onedock package.
+
+```sh
+$ yum install onedock
+```
+
+#### From source code
 
 Once OpenNebula, Docker, a Docker Registry and the required packages have been installed, you can install ONEDock as follows (as root user):
 
