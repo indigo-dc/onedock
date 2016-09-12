@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ONEDock - Docker support for ONE (as VMs)
-# Copyright (C) GRyCAP - I3M - UPV 
+# Copyright (C) GRyCAP - I3M - UPV
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@
 source $(dirname $0)/common.sh
 
 testClone_Image() {
-    RESULT=$($TESTING_LOCATION/tm/onedock/clone docker://dockerimage:0 wn1:/var/lib/one/datastores/0/12/disk.0 12 100)
+    RESULT=$($TESTING_LOCATION/tm/onedock/clone docker://dockerimage:0 \
+    wn1:/var/lib/one/datastores/0/12/disk.0 12 100)
     assertTrue "failed to test clone" "[ $? -eq 0 ]"
 }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ONEDock - Docker support for ONE (as VMs)
-# Copyright (C) GRyCAP - I3M - UPV 
+# Copyright (C) GRyCAP - I3M - UPV
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,14 +24,22 @@ testDeploy() {
     mkdir -p $DATASTORE_LOCATION/$VMID
     touch $DATASTORE_LOCATION/$VMID/disk.1
     touch $DATASTORE_LOCATION/$VMID/disk.2
-    ln -s $DATASTORE_LOCATION/$VMID/disk.2 $DATASTORE_LOCATION/$VMID/disk.2.iso 2> /dev/null
-    RESULT=$(echo "$(echo $VM_TEMPLATE_PLAINTXT | sed "s/%%VMID%%/$VMID/g")" | $TESTING_LOCATION/vmm/onedock/deploy $DATASTORE_LOCATION/$VMID/deployment.0 wn1 2 wn1 2>/dev/null)
+    ln -s $DATASTORE_LOCATION/$VMID/disk.2 \
+    $DATASTORE_LOCATION/$VMID/disk.2.iso 2> /dev/null
+    RESULT=$(echo "$(echo $VM_TEMPLATE_PLAINTXT | sed "s/%%VMID%%/$VMID/g")" \
+    | $TESTING_LOCATION/vmm/onedock/deploy \
+    $DATASTORE_LOCATION/$VMID/deployment.0 wn1 2 wn1 2>/dev/null)
 
     # Now we have to ensure that we have the files to create the container and to cleanup the container
-    assertTrue "failed to find bootstrap files" "[ -e $ONEDOCK_FOLDER/one-$VMID/deployment.bootstrap ]"
-    assertTrue "failed to find cleanup files" "[ -e $ONEDOCK_FOLDER/one-$VMID/deployment.cleanup ]"
-    assertTrue "failed to find VNC" "[ \"$(cat $TESTLOGFILE | grep 'svncterm' | wc -l)\" == \"1\" ]"
-    assertTrue "failed to find docker run " "[ \"$(cat $TESTLOGFILE | grep 'docker[ ]\{1,\}run' | grep -v sudo | wc -l)\" == \"1\" ]"
+    assertTrue "failed to find bootstrap files" \
+    "[ -e $ONEDOCK_FOLDER/one-$VMID/deployment.bootstrap ]"
+    assertTrue "failed to find cleanup files" \
+    "[ -e $ONEDOCK_FOLDER/one-$VMID/deployment.cleanup ]"
+    assertTrue "failed to find VNC" \
+    "[ \"$(cat $TESTLOGFILE | grep 'svncterm' | wc -l)\" == \"1\" ]"
+    assertTrue "failed to find docker run " \
+    "[ \"$(cat $TESTLOGFILE | grep 'docker[ ]\{1,\}run' \
+    | grep -v sudo | wc -l)\" == \"1\" ]"
 }
 
 testPoll() {
@@ -41,7 +49,8 @@ testPoll() {
     VM_COUNT=$(echo "$RESULT" | grep "VM=\[" | wc -l)
     assertTrue "failed in poll: no VM found ($RESULT)" "[ $VM_COUNT -ge 1 ]"
     VM_ID=$(echo "$RESULT" | grep "ID=-1" | wc -l)
-    assertTrue "failed in poll: found VMs with ID=-1 ($RESULT)" "[ $VM_ID -eq 0 ]"
+    assertTrue "failed in poll: found VMs with ID=-1 \
+    ($RESULT)" "[ $VM_ID -eq 0 ]"
 }
 
 testCancel() {
@@ -51,11 +60,14 @@ testCancel() {
     mkdir -p $DATASTORE_LOCATION/$VMID
     touch $DATASTORE_LOCATION/$VMID/disk.1
     touch $DATASTORE_LOCATION/$VMID/disk.2
-    ln -s $DATASTORE_LOCATION/$VMID/disk.2 $DATASTORE_LOCATION/$VMID/disk.2.iso 2> /dev/null
+    ln -s $DATASTORE_LOCATION/$VMID/disk.2 \
+    $DATASTORE_LOCATION/$VMID/disk.2.iso 2> /dev/null
 
     RESULT=$($TESTING_LOCATION/vmm/onedock/cancel one-$VMID 2>/dev/null)
     assertTrue "error cancelling the VM" "[ $? -eq 0 ]"
-    assertTrue "failed to find docker stop " "[ \"$(cat $TESTLOGFILE | grep 'docker[ ]\{1,\}stop' | grep -v sudo | wc -l)\" == \"1\" ]"
+    assertTrue "failed to find docker stop " \
+    "[ \"$(cat $TESTLOGFILE | grep 'docker[ ]\{1,\}stop' \
+    | grep -v sudo | wc -l)\" == \"1\" ]"
 }
 
 testShutdown() {
@@ -65,11 +77,14 @@ testShutdown() {
     mkdir -p $DATASTORE_LOCATION/$VMID
     touch $DATASTORE_LOCATION/$VMID/disk.1
     touch $DATASTORE_LOCATION/$VMID/disk.2
-    ln -s $DATASTORE_LOCATION/$VMID/disk.2 $DATASTORE_LOCATION/$VMID/disk.2.iso 2> /dev/null
+    ln -s $DATASTORE_LOCATION/$VMID/disk.2 \
+    $DATASTORE_LOCATION/$VMID/disk.2.iso 2> /dev/null
 
     RESULT=$($TESTING_LOCATION/vmm/onedock/shutdown one-$VMID 2>/dev/null)
     assertTrue "error shutting down the VM" "[ $? -eq 0 ]"
-    assertTrue "failed to find docker stop " "[ \"$(cat $TESTLOGFILE | grep 'docker[ ]\{1,\}stop' | grep -v sudo | wc -l)\" == \"1\" ]"
+    assertTrue "failed to find docker stop " \
+    "[ \"$(cat $TESTLOGFILE | grep 'docker[ ]\{1,\}stop' \
+    | grep -v sudo | wc -l)\" == \"1\" ]"
 }
 
 . shunit2

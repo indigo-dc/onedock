@@ -159,10 +159,12 @@ function fs_size {
 
         if echo "$HEADERS" | grep -q "OpenNebula-AppMarket-Size"; then
             # An AppMarket/Marketplace URL
-            SIZE=$(echo "$HEADERS" | grep "^OpenNebula-AppMarket-Size:" | tail -n1 | cut -d: -f2)
+            SIZE=$(echo "$HEADERS" | grep "^OpenNebula-AppMarket-Size:" | \
+            tail -n1 | cut -d: -f2)
         else
             # Not an AppMarket/Marketplace URL
-            SIZE=$(echo "$HEADERS" | grep "^Content-Length:" | tail -n1 | cut -d: -f2)
+            SIZE=$(echo "$HEADERS" | grep "^Content-Length:" | tail -n1 | \
+            cut -d: -f2)
         fi
         error=$?
         ;;
@@ -177,7 +179,8 @@ function fs_size {
                 SIZE=$(gzip_file_size "$1")
                 ;;
             *qcow*)
-                SIZE=$($QEMU_IMG info "$1" | sed -n 's/.*(\([0-9]*\) bytes).*/\1/p')
+                SIZE=$($QEMU_IMG info "$1" | \
+                sed -n 's/.*(\([0-9]*\) bytes).*/\1/p')
                 ;;
             *)
                 SIZE=$(file_size "$1")
