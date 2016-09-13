@@ -25,13 +25,13 @@ while [ $# -gt 0 ]; do
 esac
 done
 rm -rf dist
-BUILD_PKG=${APP}_${VERSION}_master
+BUILD_PKG=${APP}_${VERSION}_master_all
 mkdir -p ./dist/$BUILD_PKG/
 copy_files
 cp -r master/DEBIAN ./dist/$BUILD_PKG
 dpkg-deb --build ./dist/$BUILD_PKG
 
-BUILD_PKG=${APP}_${VERSION}_node
+BUILD_PKG=${APP}_${VERSION}_node_all
 mkdir -p ./dist/$BUILD_PKG/
 cp -r node/DEBIAN/ ./dist/$BUILD_PKG/
 dpkg-deb --build ./dist/$BUILD_PKG
