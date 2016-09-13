@@ -6,14 +6,14 @@ URL:     https://github.com/indigo-dc/onedock
 License: Apache-2.0
 Group: unknown
 BuildRoot: %{_tmppath}/%{name}-root
-Requires: xmlstarlet jq mount opennebula qemu-utils
+Requires: xmlstarlet jq opennebula
 Source0: onedock-master-%{version}.tar.gz
 BuildArch: noarch
 
 %description
-ONEDock is a set of extensions for OpenNebula to use containers as 
+ONEDock is a set of extensions for OpenNebula to use containers as
  if they were virtual machines (VM).
- The concept of ONEDock is to configure Docker to act as an hypervisor. 
+ The concept of ONEDock is to configure Docker to act as an hypervisor.
  It behaves just as KVM does in the context of OpenNebula.
 
 %prep
@@ -56,11 +56,13 @@ TM_MAD_CONF = [
 EOT
 
 echo "Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network,\
-    /usr/bin/qemu-nbd, /sbin/losetup" >> /etc/sudoers.d/opennebula
+    /usr/bin/qemu-nbd, /sbin/losetup, /bin/mount" >> /etc/sudoers.d/opennebula
 sed -i.bak-onedock 's/^\(oneadmin ALL=.*\)$/\1, ONEDOCK/' /etc/sudoers.d/opennebula
+sed -i.bkp -e "s/export LOCAL_SERVER=.*/export LOCAL_SERVER=$(hostname):5000/g" /var/lib/one/remotes/onedock.conf
 usermod -aG docker oneadmin
 touch /var/log/onedock.log && chown oneadmin:oneadmin /var/log/onedock.log
 chown -R oneadmin:oneadmin /var/lib/one/remotes
+chmod -x /var/lib/one/remotes/im/onedock.d/collectd-client.rb
 
 %clean
 DESTFOLDER=/var/lib/one/remotes/
