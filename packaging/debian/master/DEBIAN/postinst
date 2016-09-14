@@ -24,7 +24,7 @@ TM_MAD_CONF = [
 EOT
 
 echo "Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network,\
-    /usr/bin/qemu-nbd, /sbin/losetup" >> /etc/sudoers.d/opennebula
+    /usr/bin/qemu-nbd, /sbin/losetup, /bin/mount" >> /etc/sudoers.d/opennebula
 sed -i.bak-onedock 's/^\(oneadmin ALL=.*\)$/\1, ONEDOCK/' /etc/sudoers.d/opennebula
 sed -i.bkp -e "s/export LOCAL_SERVER=.*/export LOCAL_SERVER=$(hostname):5000/g" /var/lib/one/remotes/onedock.conf
 usermod -aG docker oneadmin
