@@ -91,11 +91,11 @@ This project has been tested under the following environment (for both the front
     1. <a href="#front-u-packages">Required packages</a>
   1. <a href="#front-u-install">Installation of ONEDock and activating it in ONE</a>
 1. <a href="#nodes-u">Computing nodes</a>
-  1. <a href="#nodes-u-install">Installation of OpenNebula, Docker and the required packages</a>
+  1. <a href="#nodes-u-prerrequisites">Prerrequisites</a>
     1. <a href="#nodes-u-one">OpenNebula</a>
     1. <a href="#nodes-u-docker">Docker</a>
     1. <a href="#nodes-u-packages">Required packages</a>
-    1. <a href="#nodes-u-code">Full code for impatients</a>
+  1. <a href="#nodes-u-install">Installation of ONEDock and activating it in ONE</a>
 1. <a href="#nodes-u-onedock">Preparing ONE for ONEDock</a>
 
 <a name="front-u" />
@@ -109,6 +109,10 @@ You have to install OpenNebula (i.e. installing the opennebula-node package, the
 #### Docker
 Then you have to install Docker, according to the official [Docker documentation](https://docs.docker.com/engine/installation/ubuntulinux/).
 
+**Warning**
+> We recommend using docker version 1.9.
+> If you use docker engine versions greater than 1.9, we can not ensure that OneDock works correctly. If you have doubts about installing an scpecific version of docker, please check the installation scripts in this repository: _install/ubuntu/install-docker_
+
 You need to install a Docker Registry v2.0 that is usable from all the nodes. Its name must be included in the variable ```LOCAL_SERVER``` in the file ```/var/lib/one/remotes/onedock.conf```.
 
 _REMEMBER_ to install the certificates of your Docker registry in the proper directories. The most easy way to install the certificate is to copy it into the folder ```/etc/docker/certs.d/$HOSTNAME:5000/```. But you should copy it for the whole system in case that you want to use other commands (e.g. curl).
@@ -116,17 +120,17 @@ _REMEMBER_ to install the certificates of your Docker registry in the proper dir
 For the case of ubuntu, you can use a code like this:
 
 ```bash
-mkdir -p /etc/docker/certs.d/onedockdemo:5000/
-cp domain.crt /usr/local/share/ca-certificates/
-cp domain.crt /etc/docker/certs.d/onedockdemo:5000/
-update-ca-certificates
+$ mkdir -p /etc/docker/certs.d/onedockdemo:5000/
+$ cp domain.crt /usr/local/share/ca-certificates/
+$ cp domain.crt /etc/docker/certs.d/onedockdemo:5000/
+$ update-ca-certificates
 ```
 <a name="front-u-packages" />
 #### Required packages
 Now install the required packages: jq, xmlstarlet, qemu-utils and bridge-utils.
 
 ```bash
-apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
+$ apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
 ```
 <a name="front-u-install" />
 ### Installation of ONEDock and activating it in ONE
@@ -135,32 +139,35 @@ apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
 You have to enable the INDIGO - DataCloud packages repositories. See full instructions
 [here](https://indigo-dc.gitbooks.io/indigo-datacloud-releases/content/generic_installation_and_configuration_guide_1.html#id4). Briefly you have to download the list file from [INDIGO SW Repository](http://repo.indigo-datacloud.eu/repos/1/indigo1-ubuntu14_04.list) in your /etc/apt/sources.list.d folder.
 
-```sh
+```bash
 $ cd /etc/apt/sources.list.d
 $ wget http://repo.indigo-datacloud.eu/repos/1/indigo1-ubuntu14_04.list
 ```
 
 And then install the GPG key for INDIGO the repository:
 
-```sh
+```bash
 $ wget -q -O - http://repo.indigo-datacloud.eu/repository/RPM-GPG-KEY-indigodc | sudo apt-key add -
 ```
 
-Finally install the Onedock package.
+Install the Onedock package.
 
-```sh
+```bash
 $ apt update
-$ apt install onedock
+$ apt install onedock-master
 ```
-
-#### From source code
+Finally restart opennebula so the changes applied by the onedock installation are applied:
+```bash
+$ sudo service opennebula restart
+```
+#### Manually
 Once OpenNebula, Docker, a Docker Registry and the required packages have been installed, you can install ONEDock as follows (as root user):
 
 ```bash
-cd /tmp/
-git clone https://github.com/indigo-dc/onedock
-cd onedock
-./setup_files.sh
+$ cd /tmp/
+$ git clone https://github.com/indigo-dc/onedock
+$ cd onedock
+$ ./setup_files.sh
 ```
 
 ONEDock will be installed. Then you should adjust the variables in ```/var/lib/one/remotes/onedock.conf``` according to your deployment. In particular:
@@ -171,7 +178,7 @@ ONEDock will be installed. Then you should adjust the variables in ```/var/lib/o
 In order to activate ONEDock in ONE, you just need to update the /etc/one/oned.conf file.
 
 ```bash
-cat >> /etc/one/oned.conf << EOF
+$ cat >> /etc/one/oned.conf << EOF
 IM_MAD = [
       name       = "onedock",
       executable = "one_im_ssh",
@@ -204,8 +211,8 @@ DATASTORE_MAD = [
 ```
 <a name="nodes-u" />
 ## Computing nodes
-<a name="nodes-u-install" />
-### Installation of OpenNebula, Docker and the required packages
+<a name="nodes-u-prerrequisites" />
+### Prerrequisites
 <a name="nodes-u-one" />
 #### OpenNebula
 You have to install OpenNebula (i.e. installing the opennebula-node package, the shared directories, the network bridge, etc.). That means that the OpenNebula node should be installed as if it was going to run KVM Virtual Machines. You can follow the instructions in the official OpenNebula documentation (e.g. [for Ubuntu](http://docs.opennebula.org/4.14/design_and_installation/quick_starts/qs_ubuntu_kvm.html)).
@@ -213,57 +220,76 @@ You have to install OpenNebula (i.e. installing the opennebula-node package, the
 #### Docker
 Then you have to install Docker, according to the official documentation (e.g. for [Ubuntu](https://docs.docker.com/engine/installation/ubuntulinux/)).
 
+**Warning**
+> We recommend using docker version 1.9.
+> If you use docker engine versions greater than 1.9, we can not ensure that OneDock works correctly. If you have doubts about installing an scpecific version of docker, please check the installation scripts in this repository: _install/ubuntu/install-docker_
+
 _REMEMBER_ to install the certificates of your Docker registry in the proper directories. The most easy way to install the certificate is to copy it into the folder ```/etc/docker/certs.d/$HOSTNAME:5000/```. But you should copy it for the whole system in case that you want to use other commands (e.g. curl).
 
 For the case of ubuntu, you can use a code like this:
 
 ```bash
-mkdir -p /etc/docker/certs.d/onedockdemo:5000/
-cp domain.crt /usr/local/share/ca-certificates/
-cp domain.crt /etc/docker/certs.d/onedockdemo:5000/
-update-ca-certificates
+$ mkdir -p /etc/docker/certs.d/onedockdemo:5000/
+$ cp domain.crt /usr/local/share/ca-certificates/
+$ cp domain.crt /etc/docker/certs.d/onedockdemo:5000/
+$ update-ca-certificates
 ```
 <a name="nodes-u-packages" />
 #### Required packages
 Now install the required packages: jq, xmlstarlet, qemu-utils and bridge-utils.
 
 ```bash
-apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
+$ apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
 ```
-<a name="nodes-u-code" />
-#### Full code for impatients
+<a name="nodes-u-install" />
+### Installation of ONEDock and activating it in ONE
 
-If you are impatient, you can try the following code, which works for Ubuntu 14.04, but this step is very dependent from your installation and you should check out what are you doing:
+#### From package
+You have to enable the INDIGO - DataCloud packages repositories. See full instructions
+[here](https://indigo-dc.gitbooks.io/indigo-datacloud-releases/content/generic_installation_and_configuration_guide_1.html#id4). Briefly you have to download the list file from [INDIGO SW Repository](http://repo.indigo-datacloud.eu/repos/1/indigo1-ubuntu14_04.list) in your /etc/apt/sources.list.d folder.
 
 ```bash
-# Keys de ONE
-wget -q -O- http://downloads.opennebula.org/repo/Ubuntu/repo.key | apt-key add
-echo "deb http://downloads.opennebula.org/repo/4.14/Ubuntu/14.04/ stable opennebula" > /etc/apt/sources.list.d/opennebula.list
+$ cd /etc/apt/sources.list.d
+$ wget http://repo.indigo-datacloud.eu/repos/1/indigo1-ubuntu14_04.list
+```
 
-# Keys de Docker
-apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-cat << EOT > /etc/apt/sources.list.d/docker.list
-# Ubuntu Trusty 14.04 (LTS)
-deb https://apt.dockerproject.org/repo ubuntu-trusty main
-EOT
+And then install the GPG key for INDIGO the repository:
 
-# Instalacion de docker y one
-apt-get -y update
-apt-get -y install opennebula-node nfs-common bridge-utils docker-engine jq xmlstarlet
+```bash
+$ wget -q -O - http://repo.indigo-datacloud.eu/repository/RPM-GPG-KEY-indigodc | sudo apt-key add -
+```
 
+Install the Onedock package.
+
+```bash
+$ apt update
+$ apt install onedock-node
+```
+Finally restart opennebula so the changes applied by the onedock installation are applied:
+```bash
+$ sudo service opennebula restart
+```
+
+<a name="nodes-u-code" />
+#### Manually
+
+If you prefer you can try yo install onedock manually using following code.  
+This step is very dependent from your installation and you should check out what are you doing:
+
+```bash
 # The oneadmin user should be able to run docker
-usermod -aG docker oneadmin
+$ usermod -aG docker oneadmin
 
 # Starting the nbd module and setting it persistent
-modprobe nbd max_part=16
-echo "nbd" >> /etc/modules
+$ modprobe nbd max_part=16
+$ echo "nbd" >> /etc/modules
 
-cat > /etc/modprobe.d/nbd.conf <<\EOT
+$ cat > /etc/modprobe.d/nbd.conf <<\EOT
 options nbd max_part=16
 EOT
 
 # Creating a bridge for the ONE network
-cat > /etc/network/interfaces <<\EOT
+$ cat > /etc/network/interfaces <<\EOT
 auto lo
 iface lo inet loopback
 
@@ -293,7 +319,7 @@ oneadmin ALL=(ALL) NOPASSWD: ONE_MISC, ONE_NET, ONE_LVM, ONE_ISCSI, ONE_OVS, ONE
 Also you need to add the ```oneadmin``` user to the ```docker``` group, in order to be able to run docker containers.
 
 ```bash
-usermod -aG docker oneadmin
+$ usermod -aG docker oneadmin
 ```
 # Centos 7
 1. <a href="#front-c">Front-end node</a>
@@ -306,7 +332,7 @@ usermod -aG docker oneadmin
   1. <a href="#nodes-c-install">Installation of OpenNebula, Docker and the required packages</a>
     1. <a href="#nodes-c-one">OpenNebula</a>
     1. <a href="#nodes-c-packages">Required packages</a>
-1. <a href="#onedock">Preparing ONE for ONEDock</a>
+  1. <a href="#nodes-c-install">Installation of ONEDock and activating it in ONE</a>
 1. <a href="#issues">Installation issues</a>
 
 <a name="front-c" />
@@ -320,13 +346,18 @@ You have to install OpenNebula (i.e. installing the opennebula-node package, the
 If you have issues with the _nfs_ service enable first the _rcpbind_ service and try again. To enable _rcpbind_ use the following commands:
 
 ```bash
-systemctl enable rpcbind
-systemctl start rpcbind
+$ systemctl enable rpcbind
+$ systemctl start rpcbind
 ```
 
 <a name="front-c-docker" />
 #### Docker
+
 Then you have to install Docker, according to the official [Docker documentation](https://docs.docker.com/engine/installation/linux/centos/).
+
+**Warning**
+> We recommend using docker version 1.9.
+> If you use docker engine versions greater than 1.9, we can not ensure that OneDock works correctly. If you have doubts about installing an scpecific version of docker, please check the installation scripts in this repository: _install/centos/install-docker_
 
 You need to install a Docker Registry v2.0 that is usable from all the nodes. Its name must be included in the variable `LOCAL_SERVER` in the file `/var/lib/one/remotes/onedock.conf`.
 
@@ -335,23 +366,23 @@ _REMEMBER_ to install the certificates of your Docker registry in the proper dir
 In case of CentOS 7, you can use the following code:
 
 ```bash
-mkdir -p /etc/docker/certs.d/$HOSTNAME:5000/
-cp /var/lib/docker-registry/certs/domain.crt /etc/docker/certs.d/$HOSTNAME\:5000/
-cp /var/lib/docker-registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/
-update-ca-trust extract
-service docker restart
+$ mkdir -p /etc/docker/certs.d/$HOSTNAME:5000/
+$ cp /var/lib/docker-registry/certs/domain.crt /etc/docker/certs.d/$HOSTNAME\:5000/
+$ cp /var/lib/docker-registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/
+$ update-ca-trust extract
+$ service docker restart
 ```
 <a name="front-c-packages" />
 #### Required packages
 Now install the required packages: jq, xmlstarlet
 
 ```bash
-yum -y install jq xmlstarlet
+$ yum -y install jq xmlstarlet
 ```
 <a name="front-c-install" />
 ### Installation of ONEDock and activating it in ONE
 
-### From package
+#### From package
 
 You must have the epel repository enabled:
 
@@ -376,18 +407,23 @@ $ rpm --import http://repo.indigo-datacloud.eu/repository/RPM-GPG-KEY-indigodc
 Finally install the Onedock package.
 
 ```sh
-$ yum install onedock
+$ yum install onedock-master
 ```
 
-#### From source code
+
+$ yum install jq xmlstarlet
+$ rpm -i onedock-master --replacefiles
+$ sudo service opennebula restart
+
+#### Manually
 
 Once OpenNebula, Docker, a Docker Registry and the required packages have been installed, you can install ONEDock as follows (as root user):
 
 ```bash
-cd /tmp/
-git clone https://github.com/indigo-dc/onedock
-cd onedock
-./setup_files.sh
+$ cd /tmp/
+$ git clone https://github.com/indigo-dc/onedock
+$ cd onedock
+$ ./setup_files.sh
 ```
 
 ONEDock will be installed. Then you should adjust the variables in ```/var/lib/one/remotes/onedock.conf``` according to your deployment. In particular:
@@ -398,7 +434,7 @@ ONEDock will be installed. Then you should adjust the variables in ```/var/lib/o
 In order to activate ONEDock in ONE, you just need to update the /etc/one/oned.conf file.
 
 ```bash
-cat >> /etc/one/oned.conf << EOF
+$ cat >> /etc/one/oned.conf << EOF
 IM_MAD = [
       name       = "onedock",
       executable = "one_im_ssh",
@@ -441,12 +477,16 @@ You have to install OpenNebula (i.e. installing the opennebula-node package, the
 #### Docker
 You have to install Docker, according to the official [Docker documentation](https://docs.docker.com/engine/installation/linux/centos/).
 
+**Warning**
+> We recommend using docker version 1.9.
+> If you use docker engine versions greater than 1.9, we can not ensure that OneDock works correctly. If you have doubts about installing an scpecific version of docker, please check the installation scripts in this repository: _install/centos/install-docker_
+
 _REMEMBER_ to install the certificates of your Docker registry (from the frontend) in the proper directories (of the nodes). In case of CentOS 7, you can use the following code:
 
 ```bash
-scp oneadmin@FRONT_END_IP:/var/lib/docker-registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/
-update-ca-trust extract
-service docker restart
+$ scp oneadmin@FRONT_END_IP:/var/lib/docker-registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/
+$ update-ca-trust extract
+$ service docker restart
 ```
 
 <a name="nodes-c-packages" />
@@ -454,16 +494,44 @@ service docker restart
 Now install the required packages: jq, xmlstarlet
 
 ```bash
-yum -y install jq xmlstarlet
+$ yum -y install jq xmlstarlet
+```
+<a name="front-c-install" />
+### Installation of ONEDock and activating it in ONE
+
+#### From package
+
+You must have the epel repository enabled:
+
+```sh
+$ yum install epel-release
 ```
 
-<a name="onedock" />
-## Preparing ONE for ONEDock
+Then you have to enable the INDIGO - DataCloud packages repositories. See full instructions
+[here](https://indigo-dc.gitbooks.io/indigo-datacloud-releases/content/generic_installation_and_configuration_guide_1.html#id4). Briefly you have to download the repo file from [INDIGO SW Repository](http://repo.indigo-datacloud.eu/repos/1/indigo1.repo) in your /etc/yum.repos.d folder.
 
+```sh
+$ cd /etc/yum.repos.d
+$ wget http://repo.indigo-datacloud.eu/repos/1/indigo1.repo
+```
+
+And then install the GPG key for the INDIGO repository:
+
+```sh
+$ rpm --import http://repo.indigo-datacloud.eu/repository/RPM-GPG-KEY-indigodc
+```
+
+Finally install the Onedock package.
+
+```sh
+$ yum install onedock-node
+```
+
+#### Manually
 You need to update the file ```/etc/sudoers.d/opennebula``` to add the file that will configure the network. You need to add the line
 
 ```bash
-Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd
+Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd, /sbin/losetup, /bin/mount
 ```
 
 And to activate this alias appending the alias in the following line
@@ -475,7 +543,12 @@ oneadmin ALL=(ALL) NOPASSWD: ONE_MISC, ONE_NET, ONE_LVM, ONE_ISCSI, ONE_OVS, ONE
 Also you need to add the ```oneadmin``` user to the ```docker``` group, in order to be able to run docker containers.
 
 ```bash
-usermod -aG docker oneadmin
+$ usermod -aG docker oneadmin
+```
+
+Finally you need to create the onedock log file and give permission to the oneadmin user
+```bash
+$ touch /var/log/onedock.log && chown oneadmin:oneadmin /var/log/onedock.log
 ```
 
 <a name="issues" />
@@ -490,13 +563,13 @@ The log of the OpenNebula daemon is located in `/var/log/one/oned.log`.
 This error can happen during the OpenNebula installation. If you have issues with the _nfs_ service enable first the _rcpbind_ service and try again. To enable _rcpbind_ use the following commands:
 
 ```bash
-systemctl enable rpcbind
-systemctl start rpcbind
+$ systemctl enable rpcbind
+$ systemctl start rpcbind
 ```
 ##### Failed to connect socket to '/var/run/libvirt/libvirt-sock': No such file or directory
 If the frontend fails to add a new host and you see this error in the `/var/log/one/oned.log` file, make sure that you have the libvirt daemon running in the node that you want to add. To enable the daemon execute:
 ```bash
-/usr/sbin/libvirtd -d
+$ /usr/sbin/libvirtd -d
 ```
 ##### Can't connect to the NFS server - mount.nfs: Connection timed out
 Most of the times this means that the firewall is blocking our NFS server.
@@ -658,7 +731,7 @@ The use of $HOSTNAME in this particular case is for using the OpenNebula front-e
 Finally you can deploy one Docker container out of that image:
 
 ```bash
-onevm create --memory 512 --cpu 1 --disk ubuntu --nic private --net_context
+$ onevm create --memory 512 --cpu 1 --disk ubuntu --nic private --net_context
 ```
 (where the parameter --disk ubuntu points to the just created image id).
 
