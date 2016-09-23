@@ -1,28 +1,9 @@
-# Installation
-## Ubuntu 14.04
-
-1. <a href="#front-u">Front-end node</a>
-  1. <a href="#front-u-prerrequisites">Prerrequisites</a>
-    1. <a href="#front-u-one">OpenNebula</a>
-    1. <a href="#front-u-docker">Docker</a>
-    1. <a href="#front-u-packages">Required packages</a>
-  1. <a href="#front-u-install">Installation of ONEDock and activating it in ONE</a>
-1. <a href="#nodes-u">Computing nodes</a>
-  1. <a href="#nodes-u-prerrequisites">Prerrequisites</a>
-    1. <a href="#nodes-u-one">OpenNebula</a>
-    1. <a href="#nodes-u-docker">Docker</a>
-    1. <a href="#nodes-u-packages">Required packages</a>
-  1. <a href="#nodes-u-install">Installation of ONEDock and activating it in ONE</a>
-1. <a href="#nodes-u-onedock">Preparing ONE for ONEDock</a>
-
-<a name="front-u" />
+# Ubuntu 14.04
 ## Front-end node
-<a name="front-u-prerrequisites" />
 ### Prerrequisites
-<a name="front-u-one" />
 #### OpenNebula
 You have to install OpenNebula (i.e. installing the opennebula-node package, the shared directories, the network bridge, etc.). That means that the OpenNebula node should be installed as if it was going to run KVM Virtual Machines. You can follow the instructions in the official [OpenNebula documentation](http://docs.opennebula.org/4.14/design_and_installation/quick_starts/qs_ubuntu_kvm.html).
-<a name="front-u-docker" />
+
 #### Docker
 Then you have to install Docker, according to the official [Docker documentation](https://docs.docker.com/engine/installation/ubuntulinux/).
 
@@ -42,16 +23,15 @@ $ cp domain.crt /usr/local/share/ca-certificates/
 $ cp domain.crt /etc/docker/certs.d/onedockdemo:5000/
 $ update-ca-certificates
 ```
-<a name="front-u-packages" />
+
 #### Required packages
 Now install the required packages: jq, xmlstarlet, qemu-utils and bridge-utils.
 
 ```bash
 $ apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
 ```
-<a name="front-u-install" />
-### Installation of ONEDock and activating it in ONE
 
+### Installation of ONEDock and activating it in ONE
 #### From package
 You have to enable the INDIGO - DataCloud packages repositories. See full instructions
 [here](https://indigo-dc.gitbooks.io/indigo-datacloud-releases/content/generic_installation_and_configuration_guide_1.html#id4). Briefly you have to download the list file from [INDIGO SW Repository](http://repo.indigo-datacloud.eu/repos/1/indigo1-ubuntu14_04.list) in your /etc/apt/sources.list.d folder.
@@ -126,14 +106,12 @@ DATASTORE_MAD = [
     arguments  = "-t 15 -d dummy,fs,vmfs,lvm,ceph,dev,onedock"
 ]
 ```
-<a name="nodes-u" />
+
 ## Computing nodes
-<a name="nodes-u-prerrequisites" />
 ### Prerrequisites
-<a name="nodes-u-one" />
 #### OpenNebula
 You have to install OpenNebula (i.e. installing the opennebula-node package, the shared directories, the network bridge, etc.). That means that the OpenNebula node should be installed as if it was going to run KVM Virtual Machines. You can follow the instructions in the official OpenNebula documentation (e.g. [for Ubuntu](http://docs.opennebula.org/4.14/design_and_installation/quick_starts/qs_ubuntu_kvm.html)).
-<a name="nodes-u-docker" />
+
 #### Docker
 Then you have to install Docker, according to the official documentation (e.g. for [Ubuntu](https://docs.docker.com/engine/installation/ubuntulinux/)).
 
@@ -151,16 +129,14 @@ $ cp domain.crt /usr/local/share/ca-certificates/
 $ cp domain.crt /etc/docker/certs.d/onedockdemo:5000/
 $ update-ca-certificates
 ```
-<a name="nodes-u-packages" />
 #### Required packages
 Now install the required packages: jq, xmlstarlet, qemu-utils and bridge-utils.
 
 ```bash
 $ apt-get -y install jq xmlstarlet qemu-utils bridge-utils.
 ```
-<a name="nodes-u-install" />
-### Installation of ONEDock and activating it in ONE
 
+### Installation of ONEDock and activating it in ONE
 #### From package
 You have to enable the INDIGO - DataCloud packages repositories. See full instructions
 [here](https://indigo-dc.gitbooks.io/indigo-datacloud-releases/content/generic_installation_and_configuration_guide_1.html#id4). Briefly you have to download the list file from [INDIGO SW Repository](http://repo.indigo-datacloud.eu/repos/1/indigo1-ubuntu14_04.list) in your /etc/apt/sources.list.d folder.
@@ -187,9 +163,7 @@ Finally restart opennebula so the changes applied by the onedock installation ar
 $ sudo service opennebula restart
 ```
 
-<a name="nodes-u-code" />
 #### Manually
-
 If you prefer you can try yo install onedock manually using following code.  
 This step is very dependent from your installation and you should check out what are you doing:
 
@@ -218,9 +192,7 @@ iface br0 inet dhcp
     bridge_fd       0
 EOT
 ```
-<a name="nodes-u-onedock" />
 ## Preparing ONE for ONEDock
-
 You need to update the file ```/etc/sudoers.d/opennebula``` to add the file that will configure the network. You need to add the line
 
 ```bash

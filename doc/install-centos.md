@@ -1,22 +1,6 @@
 # Centos 7
-1. <a href="#front-c">Front-end node</a>
-  1. <a href="#front-c-prerrequisites">Prerrequisites</a>
-    1. <a href="#front-c-one">OpenNebula</a>
-    1. <a href="#front-c-docker">Docker</a>
-    1. <a href="#front-c-packages">Required packages</a>
-  1. <a href="#front-c-install">Installation of ONEDock and activating it in ONE</a>
-1. <a href="#nodes-c">Computing nodes</a>
-  1. <a href="#nodes-c-install">Installation of OpenNebula, Docker and the required packages</a>
-    1. <a href="#nodes-c-one">OpenNebula</a>
-    1. <a href="#nodes-c-packages">Required packages</a>
-  1. <a href="#nodes-c-install">Installation of ONEDock and activating it in ONE</a>
-1. <a href="#issues">Installation issues</a>
-
-<a name="front-c" />
 ## Front-end node
-<a name="front-c-prerrequisites" />
 ### Prerrequisites
-<a name="front-c-one" />
 #### OpenNebula
 You have to install OpenNebula (i.e. installing the opennebula-node package, the shared directories, the network bridge, etc.). That means that the OpenNebula node should be installed as if it was going to run KVM Virtual Machines. You can follow the instructions in the official [OpenNebula documentation](http://docs.opennebula.org/4.14/design_and_installation/quick_starts/qs_centos7_kvm.html).
 
@@ -27,9 +11,7 @@ $ systemctl enable rpcbind
 $ systemctl start rpcbind
 ```
 
-<a name="front-c-docker" />
 #### Docker
-
 Then you have to install Docker, according to the official [Docker documentation](https://docs.docker.com/engine/installation/linux/centos/).
 
 **Warning**
@@ -49,18 +31,16 @@ $ cp /var/lib/docker-registry/certs/domain.crt /etc/pki/ca-trust/source/anchors/
 $ update-ca-trust extract
 $ service docker restart
 ```
-<a name="front-c-packages" />
+
 #### Required packages
 Now install the required packages: jq, xmlstarlet
 
 ```bash
 $ yum -y install jq xmlstarlet
 ```
-<a name="front-c-install" />
+
 ### Installation of ONEDock and activating it in ONE
-
 #### From package
-
 You must have the epel repository enabled:
 
 ```sh
@@ -87,13 +67,15 @@ Finally install the Onedock package.
 $ yum install onedock-master
 ```
 
-
+**Warning**
+> If the package installation doesn't work using yum, try to download the package and install it using rpm.
+```
 $ yum install jq xmlstarlet
 $ rpm -i onedock-master --replacefiles
 $ sudo service opennebula restart
+```
 
 #### Manually
-
 Once OpenNebula, Docker, a Docker Registry and the required packages have been installed, you can install ONEDock as follows (as root user):
 
 ```bash
@@ -142,15 +124,12 @@ DATASTORE_MAD = [
     arguments  = "-t 15 -d dummy,fs,vmfs,lvm,ceph,dev,onedock"
 ]
 ```
-<a name="nodes-c" />
+
 ## Computing nodes
-<a name="nodes-c-install" />
 ### Installation of OpenNebula, Docker and the required packages
-<a name="nodes-c-one" />
 #### OpenNebula
 You have to install OpenNebula (i.e. installing the opennebula-node package, the shared directories, the network bridge, etc.). That means that the OpenNebula node should be installed as if it was going to run KVM Virtual Machines. You can follow the instructions in the official [OpenNebula documentation](http://docs.opennebula.org/4.14/design_and_installation/quick_starts/qs_centos7_kvm.html).
 
-<a name="front-c-docker" />
 #### Docker
 You have to install Docker, according to the official [Docker documentation](https://docs.docker.com/engine/installation/linux/centos/).
 
@@ -166,16 +145,13 @@ $ update-ca-trust extract
 $ service docker restart
 ```
 
-<a name="nodes-c-packages" />
 #### Required packages
 Now install the required packages: jq, xmlstarlet
 
 ```bash
 $ yum -y install jq xmlstarlet
 ```
-<a name="front-c-install" />
 ### Installation of ONEDock and activating it in ONE
-
 #### From package
 
 You must have the epel repository enabled:
@@ -228,9 +204,7 @@ Finally you need to create the onedock log file and give permission to the onead
 $ touch /var/log/onedock.log && chown oneadmin:oneadmin /var/log/onedock.log
 ```
 
-<a name="issues" />
 ## Issues
-
 Most of the issues come from an incorrect configuration of OpenNebula or the docker registry. The main way to find what is causing the issue is checking the log files.
 
 The log file for ONEDock can be found in `/var/log/onedock.log`.
