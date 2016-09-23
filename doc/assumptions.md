@@ -7,4 +7,4 @@ For a proper OneDock installation you need the following:
 * A local Docker registry v2.0 installed in a host (named dockerregistry), which is the same ONE frontend.
 * The folder in which the docker images are stored is known and it is accessible from the command line.
 
-If you do not have such deployment please follow the instruction of section <a href="#quick">_Quick deployment of a test environment_</a>.
+If you do not have such deployment please follow the instruction of section [Quick deployment of a test environment](https://indigo-dc.gitbooks.io/onedock/content/doc/quick-deployment.html).
