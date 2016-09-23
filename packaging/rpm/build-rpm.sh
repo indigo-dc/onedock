@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 NODE=master
-VERSION=1.0
+VERSION=1.0-2
 APP=onedock
 BASE_FOLDER=.
 
@@ -20,7 +20,7 @@ while [ $# -gt 0 ]; do
             shift
             shift;;
         *)	echo "unexpected parameter $1" >&2
-        exit 1;;
+            exit 1;;
 
 esac
 done
