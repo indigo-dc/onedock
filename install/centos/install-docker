@@ -8,7 +8,9 @@ enabled=1
 gpgcheck=1
 gpgkey=https://yum.dockerproject.org/gpg
 EOT
-yum install -y docker-engine-1.9.1-1.el7.centos
+yum install -y yum-versionlock docker-engine-1.9.1-1.el7.centos
+yum versionlock docker
+yum versionlock docker-engine
 
 systemctl start docker
 systemctl enable docker
