@@ -2,6 +2,9 @@
 * [Ubuntu 14 instructions](https://indigo-dc.gitbooks.io/onedock/content/doc/install-ubuntu.html)
 * [Centos 7 instructions](https://indigo-dc.gitbooks.io/onedock/content/doc/install-centos.html)
 
+## Ports open needed for OneDock
+OneDock doesn't need any specific ports open, although you need to have all the ports from OpenNebula and Docker correctly configured.
+
 ## Installing master and node in the same host
 If you use the package installation and you want to install the master and the node on the same host you are going to create a conflict in the openenbula sudoers file.
 To manually fix this conflict you have to edit the file
