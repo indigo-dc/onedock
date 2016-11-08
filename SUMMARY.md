@@ -10,3 +10,4 @@
 * [Quick deployment](doc/quick-deployment.md)
 * [Using Onedock](doc/using-onedock.md)    
 * [Advanced usage](doc/advanced.md)    
+* [Service reference](doc/service-reference.md)   
