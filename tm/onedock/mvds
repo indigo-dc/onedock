@@ -1,0 +1,54 @@
+#!/bin/bash
+
+DRIVER_PATH=$(dirname $0)
+source ${DRIVER_PATH}/../../onedock.sh
+log_onedock_debug "$0 $@"
+setup_frontend
+
+SRC=$2
+DST=$1
+VMID=$3
+DSID=$4
+
+DST_PATH=`arg_path $DST`
+DST_HOST=`arg_host $DST`
+DISK_ID=$(basename ${DST_PATH} | cut -d. -f2)
+
+DST_HOST=`arg_host $DST`
+DST_DIR=`dirname $DST_PATH`
+
+CONTAINERNAME=one-$VMID
+
+DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$CONTAINERNAME" "$DISK_ID")
+
+log_onedock_debug "Image to save to: $DISKIMAGENAME"
+
+DOCKERRUN=
+PROTOCOL=${SRC::9}
+
+if [ "$PROTOCOL" == "docker://" ]; then
+    read_xpath "$(onevm show -x $VMID)" \
+        "/VM/TEMPLATE/DISK[DISK_ID=$DISK_ID]/IMAGE_ID"
+    IMGID=${XPATH_ELEMENTS[0]}
+    read_xpath "$(oneimage show -x $IMGID)" "/IMAGE/TEMPLATE/DOCKERRUN"
+    DOCKERRUN=${XPATH_ELEMENTS[0]}
+
+    DOCKER_IMG_NAME=${SRC:9}
+
+    DOCKER_CMD="docker push $DOCKER_IMG_NAME"
+
+    log_onedock "Executing ${DOCKER_CMD} in host ${DST_HOST}"
+
+    ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" \
+        "Error pushing saved image to ${DOCKER_IMG_NAME}"
+
+    DOCKER_CMD="docker rmi $DOCKER_IMG_NAME"
+
+    log_onedock "Removing image $DOCKER_IMG_NAME"
+
+    ssh_exec_and_log "$DST_HOST" "$DOCKER_CMD" \
+        "Error deleting image ${DOCKER_IMG_NAME}"
+
+fi
+
+

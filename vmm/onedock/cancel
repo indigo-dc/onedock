@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # ONEDock - Docker support for ONE (as VMs)
-# Copyright (C) GRyCAP - I3M - UPV 
+# Copyright (C) GRyCAP - I3M - UPV
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,31 @@ log_onedock_debug "$0 $@"
 source ${DRIVER_PATH}/vmmfnc.sh
 
 NAME=$1
+VMID=$3
+
+read_xpath "$(onevm show -x $VMID)" \
+        "/VM/TEMPLATE/DISK[DATASTORE=\"onedock\"]/PERSISTENT"
+
+PERSISTENT=${XPATH_ELEMENTS[0]}
+
+log_onedock "Reading persistent state"
+
+if [ "$PERSISTENT" == "YES" ]; then
+
+    log_onedock_debug "Found persistent image, saving state"
+
+    read_xpath "$(onevm show -x $VMID)" \
+        "/VM/TEMPLATE/DISK[DATASTORE=\"onedock\"]/SOURCE"
+    SOURCE=${XPATH_ELEMENTS[0]}
+    IMG_NAME=${SOURCE:9}
+
+    log_onedock_debug $(docker commit "$NAME" "$IMG_NAME")
+else
+
+    log_onedock_debug "Image is not persistent ($PERSISTENT) so nothing needs to be saved"
+
+fi
+
 
 ONEDOCK_CONTAINER_FOLDER=${ONEDOCK_FOLDER}/${NAME}
 mkdir -p "$ONEDOCK_CONTAINER_FOLDER"
