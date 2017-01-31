@@ -3,7 +3,7 @@ apt-get update
 apt-get install -y apt-transport-https wget
 wget -q -O- http://downloads.opennebula.org/repo/Ubuntu/repo.key \
     | apt-key add -
-echo "deb http://downloads.opennebula.org/repo/4.14/Ubuntu/14.04/ \
+echo "deb http://downloads.opennebula.org/repo/5.2/Ubuntu/16.04/ \
     stable opennebula" > /etc/apt/sources.list.d/opennebula.list
 apt-get -y update
 apt-get -y install opennebula opennebula-node
