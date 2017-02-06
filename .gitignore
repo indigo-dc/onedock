@@ -7,3 +7,7 @@ vagrant/ln\.sh
 vagrant/mvds\.sh
 
 vagrant/ubuntu-xenial-16\.04-cloudimg-console\.log
+
+install/ubuntu/install-onedock-one5~
+
+vagrant/Vagrantfile~

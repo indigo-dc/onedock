@@ -15,6 +15,8 @@ Vagrant.configure(2) do |config|
      sudo ./install/ubuntu/install-registry
      sudo ./install/ubuntu/launch-registry
      sudo ./install/ubuntu/install-onedock-one5
+     echo "Onedock installed, creating example image"
+     sudo su - oneadmin
      cat > onedock.ds << EOF
          NAME=onedock
          DS_MAD=onedock
