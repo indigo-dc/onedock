@@ -1,1 +1,9 @@
 /vagrant/.*
+
+vagrant/cancel
+
+vagrant/ln\.sh
+
+vagrant/mvds\.sh
+
+vagrant/ubuntu-xenial-16\.04-cloudimg-console\.log
