@@ -24,8 +24,11 @@ TM_MAD_CONF = [
     NAME = "onedock", LN_TARGET = "SELF", CLONE_TARGET = "SELF", SHARED = "YES",
     DS_MIGRATE = "NO"
 ]
+DS_MAD_CONF = [
+    NAME = "onedock", REQUIRED_ATTRS = "", PERSISTENT_ONLY = "NO"
+]
 EOT
-sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(ARGUMENTS[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(ARGUMENTS[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' /etc/one/oned.conf
+sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(ARGUMENTS[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(ARGUMENTS[ ]*=[ ]*\"[^\"]*-d [^\"]*\)\( -s [^\"]*\)\(".*$\)/\1,onedock\2,onedock\3/}' /etc/one/oned.conf
 echo "Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network,\
     /usr/bin/qemu-nbd, /sbin/losetup, /bin/mount" >> /etc/sudoers.d/opennebula
 sed -i.bak 's/^\(oneadmin ALL=.*\)$/\1, ONEDOCK/' /etc/sudoers.d/opennebula
