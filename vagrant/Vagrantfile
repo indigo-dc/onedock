@@ -22,7 +22,7 @@ Vagrant.configure(2) do |config|
          TM_MAD=onedock
 EOF
      echo "Creating onedock datastore"
-     sudo -u oneadmin -c "onedatastore create onedock.ds"
+     sudo -u oneadmin -s "onedatastore create onedock.ds"
 
      cat > ubuntu-docker.tmpl << EOF
      NAME="ubuntu"
@@ -31,7 +31,7 @@ EOF
      DESCRIPTION="Ubuntu"
 EOF
      echo "Adding example ubuntu image"
-     sudo -u oneadmin -c "oneimage create -d onedock ubuntu-docker.tmpl"
+     sudo -u oneadmin -s "oneimage create -d onedock ubuntu-docker.tmpl"
 
      cat > docker-private.net << EOF
      NAME=private
@@ -46,10 +46,10 @@ EOF
      export DOCKER0IP=`/sbin/ifconfig docker0 | grep "inet addr" | awk -F : '{print $2}' | awk '{print $1}'`
      sed -i "s/TBC/$DOCKER0IP/g" docker-private.net
      echo "Creating onedock network"
-     sudo -u oneadmin -c "onevnet create docker-private.net"
+     sudo -u oneadmin -s "onevnet create docker-private.net"
 
      echo "Creating onedock host"
-     sudo -u oneadmin -c "onehost create $HOSTNAME -i onedock -v onedock -n dummy"
+     sudo -u oneadmin -s "onehost create $HOSTNAME -i onedock -v onedock -n dummy"
      echo "User and Password for oneadmin user:"
      cat /var/lib/one/.one/one_auth
    SHELL
