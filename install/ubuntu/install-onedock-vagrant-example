@@ -1,0 +1,38 @@
+#!/bin/bash
+echo "Onedock installed, creating example image"
+su -u oneadmin
+whoami
+cat > onedock.ds << EOF
+     NAME=onedock
+     DS_MAD=onedock
+     TM_MAD=onedock
+EOF
+echo "Creating onedock datastore"
+onedatastore create onedock.ds
+
+cat > ubuntu-docker.tmpl << EOF
+     NAME="ubuntu"
+     PATH=docker://ubuntu:latest
+     TYPE=OS
+     DESCRIPTION="Ubuntu"
+EOF
+echo "Adding example ubuntu image"
+oneimage create -d onedock ubuntu-docker.tmpl
+
+cat > docker-private.net << EOF
+     NAME=private
+     BRIDGE=docker0
+     NETWORK_ADDRESS = "TBC"
+     NETWORK_MASK    = "255.255.0.0"
+     DNS             = "TBC"
+     GATEWAY         = "TBC"
+     AR=[TYPE = "IP4", IP = "172.17.10.1", SIZE = "100" ]
+EOF
+
+export DOCKER0IP=`/sbin/ifconfig docker0 | grep "inet addr" | awk -F : '{print $2}' | awk '{print $1}'`
+sed -i "s/TBC/$DOCKER0IP/g" docker-private.net
+echo "Creating onedock network"
+onevnet create docker-private.net
+
+echo "Creating onedock host"
+onehost create $HOSTNAME -i onedock -v onedock -n dummy
