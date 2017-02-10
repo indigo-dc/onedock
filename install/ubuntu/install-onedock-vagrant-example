@@ -1,5 +1,6 @@
 #!/bin/bash
 echo "Onedock installed, creating example image"
+whoami
 cd /tmp
 cat > onedock.ds << EOF
      NAME=onedock
