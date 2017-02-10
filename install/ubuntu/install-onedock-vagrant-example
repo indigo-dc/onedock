@@ -1,5 +1,6 @@
 #!/bin/bash
 echo "Onedock installed, creating example image"
+cd /tmp
 cat > onedock.ds << EOF
      NAME=onedock
      DS_MAD=onedock
