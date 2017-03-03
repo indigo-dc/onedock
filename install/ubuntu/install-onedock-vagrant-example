@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Onedock installed, creating example image"
-whoami
+sudo service opennebula start
 cd /tmp
 cat > onedock.ds << EOF
      NAME=onedock
@@ -8,7 +8,7 @@ cat > onedock.ds << EOF
      TM_MAD=onedock
 EOF
 echo "Creating onedock datastore"
-onedatastore create onedock.ds
+sudo -u oneadmin onedatastore create onedock.ds
 
 cat > ubuntu-docker.tmpl << EOF
      NAME="ubuntu"
@@ -17,7 +17,7 @@ cat > ubuntu-docker.tmpl << EOF
      DESCRIPTION="Ubuntu"
 EOF
 echo "Adding example ubuntu image"
-oneimage create -d onedock ubuntu-docker.tmpl
+sudo -u oneadmin oneimage create -d onedock ubuntu-docker.tmpl
 
 cat > docker-private.net << EOF
      NAME=private
@@ -27,12 +27,13 @@ cat > docker-private.net << EOF
      DNS             = "TBC"
      GATEWAY         = "TBC"
      AR=[TYPE = "IP4", IP = "172.17.10.1", SIZE = "100" ]
+     VN_MAD=dummy
 EOF
 
 export DOCKER0IP=`/sbin/ifconfig docker0 | grep "inet addr" | awk -F : '{print $2}' | awk '{print $1}'`
 sed -i "s/TBC/$DOCKER0IP/g" docker-private.net
 echo "Creating onedock network"
-onevnet create docker-private.net
+sudo -u oneadmin onevnet create docker-private.net
 
 echo "Creating onedock host"
-onehost create $HOSTNAME -i onedock -v onedock -n dummy
+sudo -u oneadmin onehost create $HOSTNAME -i onedock -v onedock

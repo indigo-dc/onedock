@@ -1,8 +1,8 @@
 #!/bin/bash
 apt install -y xmlstarlet jq git
-cd /tmp
-git clone -b one5-vagrant https://github.com/indigo-dc/onedock
-cd onedock
+#cd /tmp
+#git clone -b one5-vagrant https://github.com/indigo-dc/onedock
+cd /onedock
 ./setup_files.sh <<< y
 cat >> /etc/one/oned.conf << EOT
 IM_MAD = [
