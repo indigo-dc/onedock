@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-onehost create $HOSTNAME -i onedock -v onedock -n dummy
+onehost create $HOSTNAME -i onedock -v onedock
 sleep 2
 
 # Check the host creation status
