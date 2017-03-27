@@ -1,0 +1,64 @@
+#!/bin/bash
+source $(dirname $0)/test-common.sh
+
+printf "Testing persistent images"
+
+progress
+
+oneimage persistent ubuntu
+
+progress
+
+cat > /tmp/onedock.vm << EOT
+NAME = container-img
+CPU = 1
+MEMORY = 128
+DISK = [ IMAGE=ubuntu ]
+NIC = [ NETWORK_ID=0 ]
+CONTEXT = [ NETWORK = "YES" ]
+EOT
+
+create_vm /tmp/onedock.vm
+
+progress
+
+CONTAINER_NAME=one-$VMID
+
+docker exec $CONTAINER_NAME touch /file
+
+progress
+
+onevm shutdown $VMID
+
+wait_for 10
+
+progress
+
+create_vm /tmp/onedock.vm
+
+progress
+
+CONTAINER_NAME=one-$VMID
+
+FILE_TEST="$(docker exec $CONTAINER_NAME ls / | grep file)"
+
+progress
+
+onevm shutdown $VMID
+
+wait_for 10
+
+oneimage nonpersistent ubuntu
+
+progress
+
+if [[ $FILE_TEST = file ]];
+then
+  echo "Persistence test succeed"
+else
+  echo "Persistence test failed"
+  exit -1
+fi
+
+
+exit 0
