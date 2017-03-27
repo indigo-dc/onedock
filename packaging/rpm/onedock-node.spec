@@ -1,12 +1,12 @@
 Summary: ONEDock installation - EXPERIMENTAL. Please consider installing it by hand
 Name: onedock-node
-Version: 1.0
-Release: 2
+Version: 1.1
+Release: 1
 URL:     https://github.com/indigo-dc/onedock
 License: Apache-2.0
 Group: unknown
 BuildRoot: %{_tmppath}/%{name}-root
-Requires: xmlstarlet jq opennebula-node-kvm docker-engine = 1.9.1-1.el7.centos
+Requires: xmlstarlet jq opennebula-node-kvm docker-engine bridge-utils 
 BuildArch: noarch
 
 %description
