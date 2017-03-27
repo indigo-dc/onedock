@@ -6,8 +6,7 @@ cat << EOT > /etc/apt/sources.list.d/docker.list
 deb https://apt.dockerproject.org/repo ubuntu-$(lsb_release -sc) main
 EOT
 apt-get -y update
-apt-get -y install linux-image-extra-$(uname -r) docker-engine=1.9.1-0~trusty
-apt-mark hold docker-engine
+apt-get -y install linux-image-extra-$(uname -r) docker-engine
 cat > /etc/init.d/dockerrestart << EOT
 #!/bin/bash
 cgroups-umount
