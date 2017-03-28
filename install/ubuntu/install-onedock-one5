@@ -1,5 +1,5 @@
 #!/bin/bash
-yum install -y xmlstarlet jq git
+apt install -y xmlstarlet jq git
 cd /tmp
 git clone https://github.com/indigo-dc/onedock
 cd onedock
