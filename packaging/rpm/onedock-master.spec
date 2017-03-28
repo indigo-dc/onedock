@@ -42,28 +42,28 @@ cat >> /etc/one/oned.conf << EOT
 #*******************************************************************************
 
 IM_MAD = [
-  name       = "onedock",
-  executable = "one_im_ssh",
-  arguments  = "-r 3 -t 15 onedock" 
+    name       = "onedock",
+    executable = "one_im_ssh",
+    arguments  = "-r 3 -t 15 onedock"
 ]
 
 VM_MAD = [
-  name       = "onedock",
-  executable = "one_vmm_exec",
-  arguments  = "-t 15 -r 0 onedock",
-  type       = "xml" 
+    name       = "onedock",
+    executable = "one_vmm_exec",
+    arguments  = "-t 15 -r 0 onedock",
+    type       = "xml"
 ]
 
 TM_MAD_CONF = [
-  name = "onedock", ln_target = "SYSTEM", clone_target = "SYSTEM", shared = "yes"
+    name = "onedock", ln_target = "SYSTEM", clone_target = "SYSTEM", shared = "yes"
 ]
 EOT
 
-  sed -i.bak-onedock '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{
-  s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};
-  /^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{
-  s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' \
-  /etc/one/oned.conf
+sed -i.bak-onedock '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{
+s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};
+/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{
+s/\(arguments[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/}' \
+/etc/one/oned.conf
 }
 
 function configure_one5 {
@@ -73,39 +73,38 @@ cat >> /etc/one/oned.conf << EOT
 #*******************************************************************************
 
 IM_MAD = [
-  NAME          = "onedock",
-  SUNSTONE_NAME = "ONEDock",
-  EXECUTABLE    = "one_im_ssh",
-  ARGUMENTS     = "-r 3 -t 15 onedock" 
+    NAME          = "onedock",
+    SUNSTONE_NAME = "ONEDock",
+    EXECUTABLE    = "one_im_ssh",
+    ARGUMENTS     = "-r 3 -t 15 onedock"
 ]
 
 VM_MAD = [
-  NAME           = "onedock",
-  SUNSTONE_NAME  = "ONEDock",
-  EXECUTABLE     = "one_vmm_exec",
-  ARGUMENTS      = "-t 15 -r 0 onedock",
-  TYPE           = "xml",
-  KEEP_SNAPSHOTS = "no",
-  IMPORTED_VMS_ACTIONS = "terminate, terminate-hard, hold, release, delete, reboot, reboot-hard"
+    NAME           = "onedock",
+    SUNSTONE_NAME  = "ONEDock",
+    XECUTABLE     = "one_vmm_exec",
+    ARGUMENTS      = "-t 15 -r 0 onedock",
+    TYPE           = "xml",
+    KEEP_SNAPSHOTS = "no",
+    IMPORTED_VMS_ACTIONS = "terminate, terminate-hard, hold, release, delete, reboot, reboot-hard"
 ]
 
 TM_MAD_CONF = [
-  NAME = "onedock", LN_TARGET = "SELF", CLONE_TARGET = "SELF", SHARED = "YES", DS_MIGRATE = "NO"
+    NAME = "onedock", LN_TARGET = "SELF", CLONE_TARGET = "SELF", SHARED = "YES", DS_MIGRATE = "NO"
 ]
 
 DS_MAD_CONF = [
-  NAME = "onedock", REQUIRED_ATTRS = "", PERSISTENT_ONLY = "NO"
+    NAME = "onedock", REQUIRED_ATTRS = "", PERSISTENT_ONLY = "NO"
 ]
 EOT
-  
-  sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(ARGUMENTS[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(ARGUMENTS[ ]*=[ ]*\"[^\"]*-d [^\"]*\)\( -s [^\"]*\)\(".*$\)/\1,onedock\2,onedock\3/}' /etc/one/oned.conf
+
+sed -i.bak '/^[ \t]*TM_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(ARGUMENTS[ ]*=[ ]*\"[^\"]*\)\(".*$\)/\1,onedock\2/};/^[ \t]*DATASTORE_MAD[ \t]*=[ \t]*\[/,/\][ \t]*$/{s/\(ARGUMENTS[ ]*=[ ]*\"[^\"]*-d [^\"]*\)\( -s [^\"]*\)\(".*$\)/\1,onedock\2,onedock\3/}' /etc/one/oned.conf
 }
 
-if [ $ONE_VER -eq 5 ]
-then
-  configure_one5
+if [ $ONE_VER -eq 5 ]; then
+    configure_one5
 else
-  configure_one4
+    configure_one4
 fi
 
 sed -i.bkp -e "s/export LOCAL_SERVER=.*/export LOCAL_SERVER=$(hostname):5000/g" /var/lib/one/remotes/onedock.conf
@@ -125,4 +124,3 @@ rm -rf ${RPM_BUILD_ROOT}
 %attr(755,root,root) /var/lib/one/remotes/*
 
 %changelog
-
