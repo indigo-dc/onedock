@@ -35,7 +35,7 @@ lxc.include = /var/lib/lxc/$NAME/config
 lxc.mount.entry=$PWD/../.. opt/onedock none bind,create=dir 0 0
 EOT
 COMMANDS="lxc/install-base ubuntu/install-one5 ubuntu/install-docker \
-    ubuntu/install-registry ubuntu/install-onedock \
+    ubuntu/install-registry ubuntu/install-onedock-one5 \
     lxc/cleanup lxc/lxc-nbd-support"
 for CMD in $COMMANDS; do
     lxc-start -d -n $NAME -f $NAME.install.config
