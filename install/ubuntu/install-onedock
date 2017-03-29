@@ -1,5 +1,5 @@
 #!/bin/bash
-apt-get install -y xmlstarlet jq git
+apt-get install -y xmlstarlet jq git bridge-utils
 cd /tmp
 git clone https://github.com/indigo-dc/onedock
 cd onedock
@@ -7,16 +7,16 @@ cd onedock
 #$(dirname $0)/../../setup_files.sh <<< y
 cat >> /etc/one/oned.conf << EOT
 IM_MAD = [
-      name       = "onedock",
-      executable = "one_im_ssh",
-      arguments  = "-r 3 -t 15 onedock" ]
-
+    name       = "onedock",
+    executable = "one_im_ssh",
+    arguments  = "-r 3 -t 15 onedock"
+]
 VM_MAD = [
     name       = "onedock",
     executable = "one_vmm_exec",
     arguments  = "-t 15 -r 0 onedock",
-    type       = "xml" ]
-
+    type       = "xml"
+]
 TM_MAD_CONF = [
     name = "onedock", ln_target = "SYSTEM", clone_target = "SYSTEM", shared = "yes"
 ]

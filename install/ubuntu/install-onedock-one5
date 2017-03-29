@@ -6,10 +6,11 @@ cd onedock
 ./setup_files.sh <<< y
 cat >> /etc/one/oned.conf << EOT
 IM_MAD = [
-      NAME          = "onedock",
-      SUNSTONE_NAME = "ONEDock",
-      EXECUTABLE    = "one_im_ssh",
-      ARGUMENTS     = "-r 3 -t 15 onedock" ]
+    NAME          = "onedock",
+    SUNSTONE_NAME = "ONEDock",
+    EXECUTABLE    = "one_im_ssh",
+    ARGUMENTS     = "-r 3 -t 15 onedock"
+]
 VM_MAD = [
     NAME           = "onedock",
     SUNSTONE_NAME  = "ONEDock",
