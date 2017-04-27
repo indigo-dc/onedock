@@ -1,4 +1,4 @@
 #!/bin/bash
 apt-get update
-apt-get install -y --force-yes apt-transport-https
-apt-get install -y linux-image-generic-lts-trusty
+apt-get install -y --force-yes apt-transport-https --lsb-core
+apt-get install -y linux-image-generic-lts-$(lsb_release -sc)
