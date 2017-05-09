@@ -25,6 +25,10 @@ source ${DRIVER_PATH}/vmmfnc.sh
 
 NAME=$1
 
+DISKIMAGENAME=$(build_dock_name "$LOCAL_SERVER" "" "$NAME" "0")
+
+log_onedock_debug $(docker create --name $NAME $DISKIMAGENAME)
+
 log_onedock_debug $(docker start --checkpoint-dir $ONEDOCK_CHECKPOINT_FOLDER --checkpoint checkpoint-$NAME $NAME)
 
 exit 0

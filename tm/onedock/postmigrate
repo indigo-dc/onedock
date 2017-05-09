@@ -26,4 +26,9 @@
 # To access the vm_template you can use the xpath.rb utility. Check the
 # datastore drivers for an example.
 
+DRIVER_PATH=$(dirname $0)
+source ${DRIVER_PATH}/../../onedock.sh
+log_onedock_debug "$0 $@"
+setup_frontend
+
 exit 0
