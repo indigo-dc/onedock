@@ -346,7 +346,7 @@ EOT
         done
     fi
 
-    echo "--net=\"none\" -h $CONTAINERNAME \
+    echo "--net none -h $CONTAINERNAME \
                 --add-host $CONTAINERNAME:127.0.1.1 $G_DNS_STR"
     return 0
 }

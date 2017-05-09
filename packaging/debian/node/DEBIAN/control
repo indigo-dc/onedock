@@ -1,9 +1,9 @@
 Package: onedock-node
-Version: 1.0-2
+Version: 1.1
 Section: unknown
 Priority: extra
 Architecture: all
-Depends: opennebula-node (>= 4.12.3+dfsg-3build1), xmlstarlet (>= 1.5.0-1), mount, jq (>= 1.3-1.1ubuntu1), qemu-utils, docker-engine (=1.9.1-0~trusty)
+Depends: xmlstarlet (>= 1.5.0-1), mount, jq (>= 1.3-1.1ubuntu1), qemu-utils, docker-engine, bridge-utils
 Maintainer: Indigo DC Project (https://github.com/indigo-dc/onedock)
 Description: ONEDock (for internal nodes)
  ONEDock is a set of extensions for OpenNebula to use containers as
