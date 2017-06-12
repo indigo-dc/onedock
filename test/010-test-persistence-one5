@@ -52,12 +52,11 @@ oneimage nonpersistent ubuntu
 
 progress
 
-if [[ $FILE_TEST = file ]];
-then
-  echo "Persistence test succeed"
+if [[ $FILE_TEST = file ]]; then
+    echo "Persistence test succeed"
 else
-  echo "Persistence test failed"
-  exit -1
+    echo "Persistence test failed"
+    exit -1
 fi
 
 
