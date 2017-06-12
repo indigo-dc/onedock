@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 NODE=master
-VERSION=1.1
+VERSION=1.2
 APP=onedock
 BASE_FOLDER=.
 
