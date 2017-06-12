@@ -1,6 +1,6 @@
 Summary: ONEDock installation - EXPERIMENTAL. Please consider installing it by hand
 Name: onedock-master
-Version: 1.1
+Version: 1.2
 Release: 1
 URL:     https://github.com/indigo-dc/onedock
 License: Apache-2.0
