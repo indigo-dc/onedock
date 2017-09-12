@@ -42,36 +42,23 @@ $ yum -y install jq xmlstarlet
 ### Installation of ONEDock and activating it in ONE
 #### From package
 You must have the epel repository enabled:
-
 ```sh
 $ yum install epel-release
 ```
 
-Then you have to enable the INDIGO - DataCloud packages repositories. See full instructions
-[here](https://indigo-dc.gitbooks.io/indigo-datacloud-releases/content/generic_installation_and_configuration_guide_1.html#id4). Briefly you have to download the repo file from [INDIGO SW Repository](http://repo.indigo-datacloud.eu/repos/1/indigo1.repo) in your /etc/yum.repos.d folder.
-
-```sh
-$ cd /etc/yum.repos.d
-$ wget http://repo.indigo-datacloud.eu/repos/1/indigo1.repo
+Then you have to download the required package:
+```
+$ wget https://github.com/indigo-dc/onedock/releases/download/v1.2/onedock-master-1.2-1.noarch.rpm -O onedock-master
 ```
 
-And then install the GPG key for the INDIGO repository:
-
-```sh
-$ rpm --import http://repo.indigo-datacloud.eu/repository/RPM-GPG-KEY-indigodc
-```
-
-Finally install the Onedock package.
-
-```sh
-$ yum install onedock-master
-```
-
-**Warning**
-> If the package installation doesn't work using yum, try to download the package and install it using rpm.
+And install its dependencies and the main package:
 ```
 $ yum install jq xmlstarlet
 $ rpm -i onedock-master --replacefiles
+```
+
+Finally restart the opennebula service:
+```
 $ sudo service opennebula restart
 ```
 
