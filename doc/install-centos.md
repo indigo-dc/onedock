@@ -48,7 +48,7 @@ $ yum install epel-release
 
 Then you have to download the required package:
 ```
-$ wget https://github.com/indigo-dc/onedock/releases/download/v1.2/onedock-master-1.2-1.noarch.rpm -O onedock-master
+$ wget http://repo.indigo-datacloud.eu/repository/indigo/2/centos7/x86_64/updates/onedock-master-1.2-1.noarch.rpm -O onedock-master
 ```
 
 And install its dependencies and the main package:
@@ -152,7 +152,7 @@ Then you have to enable the INDIGO - DataCloud packages repositories. See full i
 
 ```sh
 $ cd /etc/yum.repos.d
-$ wget http://repo.indigo-datacloud.eu/repos/1/indigo1.repo
+$ wget http://repo.indigo-datacloud.eu/repos/2/indigo2.repo
 ```
 
 And then install the GPG key for the INDIGO repository:
