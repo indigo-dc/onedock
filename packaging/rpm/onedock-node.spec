@@ -16,9 +16,9 @@ ONEDock is a set of extensions for OpenNebula to use containers as
  It behaves just as KVM does in the context of OpenNebula.
 
 %post
-echo "Cmnd_Alias ONEDOCK = /var/tmp/one/docker-manage-network,\
-    /usr/bin/qemu-nbd, /sbin/losetup, /bin/mount" >> /etc/sudoers.d/opennebula
-sed -i.bak-onedock 's/^\(oneadmin ALL=.*\)$/\1, ONEDOCK/' /etc/sudoers.d/opennebula
+grep -qF 'Cmnd_Alias ONEDOCK' /etc/sudoers.d/opennebula || echo "Cmnd_Alias ONEDOCK = \
+    /var/tmp/one/docker-manage-network, /usr/bin/qemu-nbd, /sbin/losetup, /bin/mount" >> /etc/sudoers.d/opennebula
+grep -q 'oneadmin ALL=.*, ONEDOCK' /etc/sudoers.d/opennebula || sed -i.bak-onedock 's/^\(oneadmin ALL=.*\)$/\1, ONEDOCK/' /etc/sudoers.d/opennebula
 usermod -aG docker oneadmin
 touch /var/log/onedock.log && chown oneadmin:oneadmin /var/log/onedock.log
 
